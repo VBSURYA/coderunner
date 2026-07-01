@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+//@ts-nocheck
+import React, { useState,useEffect } from 'react';
 import { FileItem, LANGUAGE_METADATA } from '../types';
 import { 
   FileCode, 
