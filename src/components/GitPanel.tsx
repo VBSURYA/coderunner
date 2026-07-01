@@ -239,12 +239,18 @@ export default function GitPanel({
       let activeBranch = branch;
       if (!branch) {
         const repoResponse = await fetch(`https://api.github.com/repos/${repoFullName}`, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          headers: token ? { 'Authorization': `Bearer ${token}`,'User-Agent': 'CodeRunner-IDE' } : {'User-Agent': 'CodeRunner-IDE'}
         });
         if (repoResponse.ok) {
           const repoData = await repoResponse.json();
-          activeBranch = repoData.default_branch || 'main';
-          setBranch(activeBranch);
+        //   activeBranch = repoData.default_branch || 'main';
+        //   setBranch(activeBranch);
+        const defaultBranch = repoData.default_branch || 'main';
+          
+          if (!selectedRepo || selectedRepo !== repoFullName || branch === 'main') {
+            activeBranch = defaultBranch;
+            setBranch(defaultBranch);
+          }
         }
       }
 
