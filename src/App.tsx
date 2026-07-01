@@ -16,7 +16,7 @@ import {
   Sun
 } from 'lucide-react';
 
-import { Analytics } from '@vercel/analytics/react';
+import { inject  } from '@vercel/analytics';
 
 import GitPanel from './components/GitPanel';
 
@@ -24,6 +24,7 @@ const LOCAL_STORAGE_FILES_KEY = 'coderunner_workspace_files';
 const LOCAL_STORAGE_SETTINGS_KEY = 'coderunner_workspace_settings';
 
 export default function App() {
+  inject(); // Initialize Vercel Analytics
   // 1. Files & Workspace State
   const [files, setFiles] = useState<FileItem[]>(() => {
     const saved = localStorage.getItem(LOCAL_STORAGE_FILES_KEY);
