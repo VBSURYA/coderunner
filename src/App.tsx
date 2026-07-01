@@ -16,6 +16,8 @@ import {
   Sun
 } from 'lucide-react';
 
+import { Analytics } from '@vercel/analytics/react';
+
 import GitPanel from './components/GitPanel';
 
 const LOCAL_STORAGE_FILES_KEY = 'coderunner_workspace_files';
@@ -494,6 +496,7 @@ export default function App() {
           </span>
         </div>
       </footer>
+      <Analytics/>
     </div>
   );
 }

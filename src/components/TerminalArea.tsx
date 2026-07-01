@@ -178,7 +178,30 @@ export default function TerminalArea({
         body: JSON.stringify({ command: cmd, cwd: currentCwd === '~' ? '.' : currentCwd })
       });
 
-      if (response.ok) {
+
+      const responseText = await response.text();
+      let data: any = null;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseErr) {
+        // Fallback if response is HTML or plain text error
+        if (!response.ok) {
+          setInteractiveLogs(prev => [
+            ...prev,
+            `exec-error (HTTP ${response.status}): ${responseText.substring(0, 300)}`
+          ]);
+        } else {
+          setInteractiveLogs(prev => [
+            ...prev,
+            `exec-error (Invalid JSON): ${responseText.substring(0, 300)}`
+          ]);
+        }
+        return;
+      }
+
+
+
+      if (response.ok && data) {
         const data = await response.json();
         const results: string[] = [];
         if (data.stdout) results.push(data.stdout);
@@ -191,8 +214,8 @@ export default function TerminalArea({
 
         setInteractiveLogs(prev => [...prev, ...results.join('\n').split('\n')]);
       } else {
-        const data = await response.json();
-        setInteractiveLogs(prev => [...prev, `exec-error: ${data.stderr || 'Command execution failed.'}`]);
+        // const data = await response.json();
+        setInteractiveLogs(prev => [...prev, `exec-error: ${data?.stderr || 'Command execution failed.'}`]);
       }
     } catch (err: any) {
       setInteractiveLogs(prev => [...prev, `terminal-error: Failed to contact backend container. (${err.message})`]);
