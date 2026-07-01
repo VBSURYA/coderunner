@@ -237,9 +237,11 @@ export default function GitPanel({
     try {
       // Determine default branch or use current selected
       let activeBranch = branch;
+
+      try{
     //   if (!branch) {
         const repoResponse = await fetch(`https://api.github.com/repos/${repoFullName}`, {
-          headers: token ? { 'Authorization': `Bearer ${token}`,'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } : {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+          headers: token ? { 'Authorization': `Bearer ${token}`,'User-Agent': 'CodeRunner-IDE' } : {'User-Agent': 'CodeRunner-IDE'}
         });
         if (repoResponse.ok) {
           const repoData = await repoResponse.json();
@@ -252,6 +254,9 @@ export default function GitPanel({
             setBranch(defaultBranch);
           }
         }
+        }catch(e){
+            console.warn('Failed to dynamically check default branch:', e);
+        }
     //   }
 
       // Fetch git tree recursively
@@ -259,9 +264,9 @@ export default function GitPanel({
       const branchRes = await fetch(treeUrl, {
         headers: token ? { 
           'Authorization': `Bearer ${token}`,
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          'User-Agent': 'CodeRunner-IDE'
         } : {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          'User-Agent': 'CodeRunner-IDE'
         }
       });
 
@@ -275,7 +280,7 @@ export default function GitPanel({
       // Now fetch complete tree recursively
       const recurseTreeUrl = `https://api.github.com/repos/${repoFullName}/git/trees/${treeSha}?recursive=1`;
       const treeRes = await fetch(recurseTreeUrl, {
-        headers: token ? { 'Authorization': `Bearer ${token}`,'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } : {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        headers: token ? { 'Authorization': `Bearer ${token}`,} : {}
       });
 
       if (!treeRes.ok) throw new Error('Failed to retrieve recursive file tree from GitHub.');
@@ -284,7 +289,41 @@ export default function GitPanel({
       const loadedFiles: FileItem[] = [];
 
       // Loop through tree items, ignore directories and dot files, and download content
-      const fileNodes = treeData.tree.filter((node: any) => node.type === 'blob');
+      const fileNodes = treeData.tree.filter((node: any) => {
+        if (node.type !== 'blob') return false;
+        
+        const pathLower = node.path.toLowerCase();
+        
+        // Exclude system/dependency/build directories
+        if (
+          pathLower.includes('node_modules/') ||
+          pathLower.includes('.next/') ||
+          pathLower.includes('.git/') ||
+          pathLower.includes('dist/') ||
+          pathLower.includes('build/') ||
+          pathLower.includes('.vercel/') ||
+          pathLower.includes('.vscode/') ||
+          pathLower.includes('bower_components/')
+        ) {
+          return false;
+        }
+
+        // Exclude binary formats and heavy lockfiles
+        const binaryExtensions = [
+          
+          '.woff', '.woff2', '.eot', '.ttf', '.otf',
+          '.wav', '.ogg',
+          '.zip', '.tar', '.gz', '.rar', '.7z',
+           '.exe', '.dll', '.so', '.dylib',
+          '-lock.json', '.lock', '.lockb', '.yaml.lock'
+        ];
+        
+        if (binaryExtensions.some(ext => pathLower.endsWith(ext))) {
+          return false;
+        }
+
+        return true;
+      });
       
       // Limit to first 25 files to avoid hitting API rate limits during bulk import
       const limitedNodes = fileNodes.slice(0, 25);
@@ -298,7 +337,22 @@ export default function GitPanel({
         if (blobRes.ok) {
           const blobData = await blobRes.json();
           // Decodes base64 content
-          const content = decodeURIComponent(escape(atob(blobData.content.replace(/\s/g, ''))));
+        //   const content = decodeURIComponent(escape(atob(blobData.content.replace(/\s/g, ''))));
+        // Decode base64 content robustly using TextDecoder to support all UTF-8 sequences and avoid "URI malformed"
+          let content = '';
+          try {
+            const rawBase64 = blobData.content.replace(/\s/g, '');
+            const binString = atob(rawBase64);
+            const bytes = Uint8Array.from(binString, (m) => m.codePointAt(0) || 0);
+            content = new TextDecoder().decode(bytes);
+          } catch (decodeErr) {
+            console.error('Decoding error for file:', node.path, decodeErr);
+            try {
+              content = atob(blobData.content.replace(/\s/g, ''));
+            } catch (fallbackErr) {
+              content = `[Binary or non-decodable content for: ${node.path}]`;
+            }
+          }
           
           let language = 'javascript';
           const ext = node.path.substring(node.path.lastIndexOf('.')).toLowerCase();
@@ -414,7 +468,7 @@ export default function GitPanel({
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        'User-Agent': 'CodeRunner-IDE'
       };
 
       // 1. Get current branch ref (latest commit SHA)
