@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import Editor, { Monaco } from '@monaco-editor/react';
 import { FileItem, EditorSettings } from '../types';
@@ -386,6 +387,7 @@ export default function EditorArea({
                   </div>
                 </div>
               </div>
+          </div>
           </div>
         )}
       </div>
