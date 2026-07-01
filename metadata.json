@@ -1,0 +1,6 @@
+{
+  "name": "Code Runner Workspace",
+  "description": "A full-featured VS Code-like coding environment and playground with live compiler simulations, multi-file workspace, static web page previews, and a built-in AI Copilot.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
