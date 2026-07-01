@@ -186,9 +186,151 @@ app.post('/api/run', async (req, res) => {
   });
 });
 
+// // Configure Vite middleware / asset serving
+// const startServer = async () => {
+//   if (process.env.NODE_ENV !== 'production') {
+//     const vite = await createViteServer({
+//       server: { middlewareMode: true },
+//       appType: 'spa',
+//     });
+//     app.use(vite.middlewares);
+//   } else {
+//     const distPath = path.join(process.cwd(), 'dist');
+//     app.use(express.static(distPath));
+//     app.get('*', (req, res) => {
+//       res.sendFile(path.join(distPath, 'index.html'));
+//     });
+//   }
+
+//   app.listen(PORT, '0.0.0.0', () => {
+//     console.log(`Server running on http://localhost:${PORT}`);
+//   });
+// };
+
+// startServer();
+
+
+
+// GitHub OAuth authorization URL endpoint
+app.get('/api/github/auth', (req, res) => {
+  const clientId = import.meta.GITHUB_CLIENT_ID || import.meta.VITE_GITHUB_CLIENT_ID;
+  if (!clientId) {
+    return res.status(400).json({ 
+      error: 'GitHub Client ID not configured. Please set GITHUB_CLIENT_ID in your environment variables, or log in with a Personal Access Token.' 
+    });
+  }
+  const host = req.headers.host || 'localhost:3000';
+  const protocol = req.headers['x-forwarded-proto'] || 'http';
+  const redirectUri = `${protocol}://${host}/api/github/callback`;
+  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user`;
+  return res.json({ url: githubAuthUrl });
+});
+
+// GitHub OAuth callback handler
+app.get('/api/github/callback', async (req: any, res: any) => {
+  const code = req.query.code;
+  if (!code) return res.status(400).send('Authentication code is missing.');
+
+  const clientId = import.meta.GITHUB_CLIENT_ID || import.meta.VITE_GITHUB_CLIENT_ID;
+  const clientSecret = import.meta.GITHUB_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    return res.status(500).send('GitHub Client ID or Client Secret not configured on backend.');
+  }
+
+  try {
+    const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code
+      })
+    });
+
+    if (!tokenResponse.ok) throw new Error(`GitHub token exchange failed: ${tokenResponse.statusText}`);
+    const tokenData = await tokenResponse.json() as any;
+    const accessToken = tokenData.access_token;
+    if (!accessToken) throw new Error('No access token returned from GitHub');
+
+    const userResponse = await fetch('https://api.github.com/user', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json',
+        'User-Agent': 'CodeRunner-IDE'
+      }
+    });
+
+    let githubUser = null;
+    if (userResponse.ok) githubUser = await userResponse.json();
+
+    res.setHeader('Content-Type', 'text/html');
+    return res.send(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Authenticating with GitHub...</title>
+          <style>
+            body { background-color: #1e1e1e; color: #cccccc; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+            .spinner { border: 3px solid rgba(255,255,255,0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: #007acc; animation: spin 1s linear infinite; margin-bottom: 20px; }
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+          </style>
+        </head>
+        <body>
+          <div class="spinner"></div>
+          <h3>GitHub Authentication Successful!</h3>
+          <p>Syncing credentials with your IDE... This window should close automatically.</p>
+          <script>
+            if (window.opener) {
+              window.opener.postMessage({ 
+                type: 'GITHUB_OAUTH_SUCCESS', 
+                data: { token: ${JSON.stringify(accessToken)}, user: ${JSON.stringify(githubUser)} }
+              }, '*');
+              window.close();
+            } else {
+              localStorage.setItem('coderunner_github_token', ${JSON.stringify(accessToken)});
+              localStorage.setItem('coderunner_github_user', JSON.stringify(${JSON.stringify(githubUser)}));
+              window.location.href = '/';
+            }
+          </script>
+        </body>
+      </html>
+    `);
+  } catch (error: any) {
+    return res.status(500).send(`<h2>GitHub Authentication Failed</h2><p>${error.message}</p>`);
+  }
+});
+
+// Interactive terminal command executor route
+app.post('/api/terminal/exec', (req: any, res: any) => {
+  const { command, cwd } = req.body;
+  if (!command) return res.status(400).json({ error: 'Command is required' });
+
+  const forbidden = ['rm -rf /', 'mkfs', 'dd', 'shutdown', 'reboot'];
+  if (forbidden.some(f => command.includes(f))) {
+    return res.status(403).json({ stdout: '', stderr: 'Access denied: Dangerous command detected.', exitCode: 1 });
+  }
+
+  const { exec } = require('child_process');
+  const executionCwd = cwd ? path.resolve(process.cwd(), cwd) : process.cwd();
+
+  exec(command, { cwd: executionCwd, timeout: 10000 }, (error: any, stdout: string, stderr: string) => {
+    return res.json({
+      stdout: stdout || '',
+      stderr: stderr || (error ? error.message : ''),
+      exitCode: error ? (error.code || 1) : 0,
+      cwd: executionCwd
+    });
+  });
+});
+
 // Configure Vite middleware / asset serving
 const startServer = async () => {
-  if (process.env.NODE_ENV !== 'production') {
+  if (import.meta.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',

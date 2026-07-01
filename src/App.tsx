@@ -16,6 +16,8 @@ import {
   Sun
 } from 'lucide-react';
 
+import GitPanel from './components/GitPanel';
+
 const LOCAL_STORAGE_FILES_KEY = 'coderunner_workspace_files';
 const LOCAL_STORAGE_SETTINGS_KEY = 'coderunner_workspace_settings';
 
@@ -394,8 +396,8 @@ export default function App() {
 
         {/* Sliding Collapsible Drawer Panel (Explorer viewport) */}
         {sidebarTab && (
-          <div className="w-60 border-r border-[#1e1e1e] shrink-0 h-full bg-[#252526]">
-            {sidebarTab === 'explorer' && (
+          <div className="w-80 border-r border-[#1e1e1e] shrink-0 h-full bg-[#252526]">
+            {sidebarTab === 'explorer' ? (
               <FileTree
                 files={files}
                 activeFileId={activeFileId}
@@ -404,7 +406,15 @@ export default function App() {
                 onRenameFile={handleRenameFile}
                 onDeleteFile={handleDeleteFile}
               />
-            )}
+            ) : sidebarTab === 'git' ? (
+              <GitPanel
+                files={files}
+                setFiles={setFiles}
+                activeFileId={activeFileId}
+                setActiveFileId={handleSelectFile}
+                setOpenTabs={setOpenTabs}
+              />
+            ) : null}
           </div>
         )}
 

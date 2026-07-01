@@ -39,16 +39,39 @@ export default function TerminalArea({
   onToggleWebPreview,
   onCloseTerminal
 }: TerminalAreaProps) {
-  const [activeTab, setActiveTab] = useState<'output' | 'preview' | 'stdin' | 'problems'>('output');
+  const [activeTab, setActiveTab] = useState<'output' | 'preview' | 'stdin' |  'terminal' | 'problems'>('output');
   const [isMaximized, setIsMaximized] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
 
+
+  // Interactive Terminal State
+  const [interactiveLogs, setInteractiveLogs] = useState<string[]>([
+    'Welcome to CodeRunner Developer Command Terminal v1.0.0',
+    'Run any shell commands live: npm run build, ls, node index.js, mkdir, git etc.',
+    'Type "help" for special IDE tools.',
+    ''
+  ]);
+  const [terminalInput, setTerminalInput] = useState('');
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [currentCwd, setCurrentCwd] = useState('~');
+  const terminalEndRef = useRef<HTMLDivElement>(null);
+
+
+
   // Auto scroll to latest logs
   useEffect(() => {
-    if (logEndRef.current) {
+    if (logEndRef.current && activeTab === 'output') {
       logEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [terminalLogs, isRunning]);
+  }, [terminalLogs, isRunning,activeTab]);
+
+  // Auto scroll to bottom of interactive terminal
+  useEffect(() => {
+    if (terminalEndRef.current && activeTab === 'terminal') {
+      terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [interactiveLogs, activeTab]);
 
   // If we run an HTML page, automatically switch to the interactive Web Preview!
   useEffect(() => {
@@ -76,6 +99,129 @@ export default function TerminalArea({
     }
   };
 
+
+
+  // Command Execution Handler for Interactive Terminal
+  const handleTerminalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cmd = terminalInput.trim();
+    if (!cmd) return;
+
+    const inputToLog = `coderunner@ide:${currentCwd}$ ${terminalInput}`;
+    setInteractiveLogs(prev => [...prev, inputToLog]);
+    setCommandHistory(prev => [...prev, terminalInput]);
+    setHistoryIndex(-1);
+    setTerminalInput('');
+
+    // Handle standard client operations
+    if (cmd === 'clear' || cmd === 'cls') {
+      setInteractiveLogs([]);
+      return;
+    }
+
+    if (cmd === 'help') {
+      setInteractiveLogs(prev => [
+        ...prev,
+        'CodeRunner IDE Terminal Commands:',
+        '  clear            Clear the screen logs',
+        '  help             Display helper command list',
+        '  ls               List files and directories in current path',
+        '  pwd              Print working directory path',
+        '  npm run dev      Simulate background compilation/dev server',
+        '  npm run build    Bundle project and run production optimization builds',
+        '  git status       Check active repository modifications',
+        '  node <file>      Execute a local javascript file using Node server runtime',
+        ''
+      ]);
+      return;
+    }
+
+    // Special Simulated npm operations to make it feel exactly like VS Code
+    if (cmd === 'npm run dev' || cmd === 'npm start') {
+      setInteractiveLogs(prev => [
+        ...prev,
+        '[npm] > dev-server@1.0.0 dev',
+        '[npm] > vite',
+        '',
+        '  VITE v6.2.3  ready in 242 ms',
+        '  ➜  Local:   http://localhost:3000/',
+        '  ➜  Network: use --host to expose',
+        '  ➜  press h + enter to show help',
+        ''
+      ]);
+      return;
+    }
+
+    if (cmd === 'npm run build' || cmd === 'npm run compile') {
+      setInteractiveLogs(prev => [
+        ...prev,
+        '[npm] > production-builder@1.0.0 build',
+        '[npm] > vite build',
+        '',
+        'vite v6.2.3 compiling assets...',
+        '✓ 42 modules transformed.',
+        'dist/index.html                     0.84 kB │ gzip:  0.42 kB',
+        'dist/assets/index-D783bC11.css      4.12 kB │ gzip:  1.22 kB',
+        'dist/assets/index-G98H3C44.js     182.15 kB │ gzip: 54.12 kB',
+        '✓ built in 921ms',
+        'Build sequence completed successfully! Output stored inside dist/ directory.',
+        ''
+      ]);
+      return;
+    }
+
+    // Call API Route Executor for real server commands
+    try {
+      const response = await fetch('/api/terminal/exec', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: cmd, cwd: currentCwd === '~' ? '.' : currentCwd })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const results: string[] = [];
+        if (data.stdout) results.push(data.stdout);
+        if (data.stderr) results.push(data.stderr);
+        
+        if (data.cwd) {
+          const relative = data.cwd.substring(data.cwd.lastIndexOf('/') + 1);
+          setCurrentCwd(relative || '~');
+        }
+
+        setInteractiveLogs(prev => [...prev, ...results.join('\n').split('\n')]);
+      } else {
+        const data = await response.json();
+        setInteractiveLogs(prev => [...prev, `exec-error: ${data.stderr || 'Command execution failed.'}`]);
+      }
+    } catch (err: any) {
+      setInteractiveLogs(prev => [...prev, `terminal-error: Failed to contact backend container. (${err.message})`]);
+    }
+  };
+
+  // Command History Navigation Handler (Arrow up/down keys)
+  const handleTerminalKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (commandHistory.length === 0) return;
+      const nextIndex = historyIndex === -1 ? commandHistory.length - 1 : Math.max(0, historyIndex - 1);
+      setHistoryIndex(nextIndex);
+      setTerminalInput(commandHistory[nextIndex]);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (historyIndex === -1) return;
+      if (historyIndex === commandHistory.length - 1) {
+        setHistoryIndex(-1);
+        setTerminalInput('');
+      } else {
+        const nextIndex = historyIndex + 1;
+        setHistoryIndex(nextIndex);
+        setTerminalInput(commandHistory[nextIndex]);
+      }
+    }
+  };
+
+
   return (
     <div id="terminal-area-container" className={`flex flex-col border-t border-[#333333] bg-[#1e1e1e] text-[#cccccc] transition-all duration-300 ${
       isMaximized ? 'h-[75vh]' : 'h-72'
@@ -101,6 +247,20 @@ export default function TerminalArea({
                 {terminalLogs.length}
               </span>
             )}
+          </button>
+
+           {/* Interactive Terminal Tab */}
+          <button
+            id="tab-interactive-terminal"
+            onClick={() => { setActiveTab('terminal'); onToggleWebPreview(false); }}
+            className={`flex items-center gap-1.5 px-3 h-full text-xs font-semibold border-b-2 transition ${
+              activeTab === 'terminal'
+                ? 'border-[#007acc] text-white bg-[#1e1e1e]/50' 
+                : 'border-transparent text-gray-400 hover:text-white'
+            }`}
+          >
+            <Terminal className="w-3.5 h-3.5 text-amber-400" />
+            <span>Interactive Terminal</span>
           </button>
 
           {/* Stdin Tab */}
@@ -251,7 +411,43 @@ export default function TerminalArea({
           </div>
         )}
 
-        {/* TAB 2: STANDARD INPUT (STDIN) */}
+         {/* TAB 2: INTERACTIVE DEV TERMINAL */}
+        {activeTab === 'terminal' && (
+          <div 
+            id="interactive-terminal-viewport"
+            className="p-4 flex flex-col h-full bg-[#1e1e1e] text-[#cccccc] font-mono leading-normal"
+            onClick={() => document.getElementById('interactive-terminal-cmd-input')?.focus()}
+          >
+            <div className="flex-1 overflow-y-auto space-y-1 select-text scrollbar-thin max-h-[calc(100%-40px)]">
+              {interactiveLogs.map((log, index) => (
+                <div key={index} className="whitespace-pre-wrap">{log}</div>
+              ))}
+              <div ref={terminalEndRef} />
+            </div>
+
+            {/* Prompt input field */}
+            <form onSubmit={handleTerminalSubmit} className="flex items-center gap-1 bg-[#1e1e1e] pt-2 border-t border-[#333333] shrink-0">
+              <span className="text-emerald-400 select-none">coderunner@ide</span>
+              <span className="text-[#cccccc] select-none">:</span>
+              <span className="text-blue-400 font-bold select-none">{currentCwd}</span>
+              <span className="text-[#cccccc] select-none">$</span>
+              
+              <input
+                id="interactive-terminal-cmd-input"
+                type="text"
+                value={terminalInput}
+                onChange={(e) => setTerminalInput(e.target.value)}
+                onKeyDown={handleTerminalKeyDown}
+                className="flex-grow bg-transparent text-white border-none outline-none font-mono text-xs p-0 focus:ring-0 focus:ring-offset-0"
+                placeholder="Type a command (ls, npm run build, help...)"
+                autoComplete="off"
+                autoFocus
+              />
+            </form>
+          </div>
+        )}
+
+        {/* TAB 3: STANDARD INPUT (STDIN) */}
         {activeTab === 'stdin' && (
           <div className="p-4 h-full flex flex-col gap-3">
             <div className="text-[11px] text-gray-400 leading-normal max-w-xl">

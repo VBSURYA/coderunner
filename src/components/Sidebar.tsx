@@ -6,10 +6,12 @@ import {
   Sparkles,
   HelpCircle,
   Terminal,
-  Code
+  Code,
+  GitBranch,
+  Github
 } from 'lucide-react';
 
-export type SidebarTab = 'explorer' | null;
+export type SidebarTab = 'explorer' | 'git' | null;
 
 interface SidebarProps {
   activeTab: SidebarTab;
@@ -28,6 +30,12 @@ export default function Sidebar({
       icon: Files,
       label: 'File Explorer',
       hotkey: 'Ctrl+Shift+E'
+    },
+     {
+      id: 'git' as const,
+      icon: GitBranch,
+      label: 'Source Control & GitHub',
+      hotkey: 'Ctrl+Shift+G'
     }
   ];
 

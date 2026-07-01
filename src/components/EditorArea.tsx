@@ -10,7 +10,15 @@ import {
   RefreshCw,
   Maximize2,
   Minimize2,
-  Terminal
+  Terminal,
+  Github,
+  GitBranch,
+  ShieldCheck,
+  Smartphone,
+  Zap,
+  Sparkles,
+  Lock,
+  Code2
 } from 'lucide-react';
 
 interface EditorAreaProps {
@@ -286,14 +294,98 @@ export default function EditorArea({
             />
           </div>
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-[#1e1e1e] px-6 text-center select-none">
-            <div className="w-16 h-16 rounded-full bg-[#252526] border border-[#333333] flex items-center justify-center mb-4 text-[#007acc]">
-              <FileText className="w-8 h-8 opacity-60 animate-pulse" />
-            </div>
-            <h3 className="text-sm font-semibold text-gray-400">No active file open</h3>
-            <p className="text-xs text-gray-600 max-w-[280px] mt-1.5 leading-relaxed">
-              Open a file from the explorer sidebar, or trigger a template starter below to start running code.
-            </p>
+           <div className="absolute inset-0 flex flex-col items-center justify-center text-[#cccccc] bg-[#1e1e1e] px-6 select-none overflow-y-auto py-8">
+            <div className="max-w-2xl w-full space-y-6">
+              
+              {/* Header Title with animated visual badges */}
+              <div className="text-center space-y-2">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#007acc]/10 border border-[#007acc]/30 text-[#007acc] text-xs font-semibold uppercase tracking-wider mb-2">
+                  <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+                  <span>Developer Edition</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center justify-center gap-2">
+                  <Code2 className="w-7 h-7 text-[#007acc]" />
+                  <span>Cloud Commit Web IDE</span>
+                </h2>
+                <p className="text-gray-400 text-xs sm:text-sm max-w-lg mx-auto font-normal leading-relaxed">
+                  The ultimate pocket companion for engineers. Paste any GitHub repository, make live hotfixes from any device, and commit instantly with zero setup.
+                </p>
+              </div>
+
+              {/* Grid of Selling Points (Bento Style Layout) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                {/* 1. Fast GitHub Workflow */}
+                <div className="p-4 bg-[#252526]/80 border border-[#3c3c3c] rounded-lg space-y-2 transition-all hover:border-[#454545] hover:bg-[#252526]">
+                  <div className="flex items-center gap-2 text-white font-semibold">
+                    <div className="p-1.5 rounded bg-blue-500/10 text-blue-400">
+                      <Github className="w-4 h-4" />
+                    </div>
+                    <span>Instant GitHub Sync</span>
+                  </div>
+                  <p className="text-gray-400 text-[11px] leading-relaxed">
+                    Paste any repository URL, log in securely via GitHub OAuth/PAT, and import code structures instantly. No SSH keys or heavy command configuration required.
+                  </p>
+                </div>
+
+                {/* 2. Vacation & Pocket Hotfixes */}
+                <div className="p-4 bg-[#252526]/80 border border-[#3c3c3c] rounded-lg space-y-2 transition-all hover:border-[#454545] hover:bg-[#252526]">
+                  <div className="flex items-center gap-2 text-white font-semibold">
+                    <div className="p-1.5 rounded bg-amber-500/10 text-amber-400">
+                      <Smartphone className="w-4 h-4" />
+                    </div>
+                    <span>Vacation & Mobile Friendly</span>
+                  </div>
+                  <p className="text-gray-400 text-[11px] leading-relaxed">
+                    Leave your heavy laptop at home. Access this IDE on your smartphone, tablet, or public device to resolve sudden urgent incidents from your sun lounger.
+                  </p>
+                </div>
+
+                {/* 3. Zero-Storage Privacy */}
+                <div className="p-4 bg-[#252526]/80 border border-[#3c3c3c] rounded-lg space-y-2 transition-all hover:border-[#454545] hover:bg-[#252526]">
+                  <div className="flex items-center gap-2 text-white font-semibold">
+                    <div className="p-1.5 rounded bg-emerald-500/10 text-emerald-400">
+                      <ShieldCheck className="w-4 h-4" />
+                    </div>
+                    <span>Zero-Storage Privacy</span>
+                  </div>
+                  <p className="text-gray-400 text-[11px] leading-relaxed">
+                    We value your proprietary secrets. Absolutely zero source files, credentials, or code are saved on our backend database. Everything runs inside browser memory and discards on exit.
+                  </p>
+                </div>
+
+                {/* 4. Real-time Terminals */}
+                <div className="p-4 bg-[#252526]/80 border border-[#3c3c3c] rounded-lg space-y-2 transition-all hover:border-[#454545] hover:bg-[#252526]">
+                  <div className="flex items-center gap-2 text-white font-semibold">
+                    <div className="p-1.5 rounded bg-purple-500/10 text-purple-400">
+                      <Terminal className="w-4 h-4" />
+                    </div>
+                    <span>Live Interactive Terminal</span>
+                  </div>
+                  <p className="text-gray-400 text-[11px] leading-relaxed">
+                    Simulate development, view production optimized builds, run custom Node scripts, and review precise source control diff modifications straight in the browser.
+                  </p>
+                </div>
+
+              </div>
+
+              {/* Call to action & helper steps */}
+              <div className="bg-[#1e1e1e] border border-[#333333] p-4 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="space-y-1 text-center sm:text-left">
+                  <div className="text-xs font-semibold text-white flex items-center justify-center sm:justify-start gap-1">
+                    <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>How to get started:</span>
+                  </div>
+                  <p className="text-[11px] text-gray-400 max-w-md">
+                    Open the <strong className="text-gray-200">Source Control & GitHub</strong> tab in the left sidebar to connect your account and import your repository.
+                  </p>
+                </div>
+                <div className="shrink-0 flex gap-2">
+                  <div className="text-[10px] bg-[#333333] text-gray-300 font-mono px-2 py-1 rounded">
+                    Ctrl + Shift + G
+                  </div>
+                </div>
+              </div>
           </div>
         )}
       </div>
