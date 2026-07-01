@@ -331,7 +331,7 @@ export default function GitPanel({
       for (const node of fileNodes) {
         loadCount++;
         setStatusMessage({ 
-          text: `Downloading file ${loadedCount} of ${fileNodes.length}: ${node.path}...`, 
+          text: `Downloading file ${loadCount} of ${fileNodes.length}: ${node.path}...`, 
           type: 'info' 
         });
         const blobUrl = node.url;
