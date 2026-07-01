@@ -3,6 +3,11 @@ import path from "path";
 import vm from "node:vm";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
+import http from "http";
+import fs from "fs";
+import fsp from "fs/promises";
+import { spawn } from "child_process";
+
 
 dotenv.config();
 
@@ -392,6 +397,250 @@ app.post("/api/terminal/exec", (req: any, res: any) => {
     },
   );
 });
+
+// Directory for storing the active user workspace files
+let terminalCwd = path.resolve(process.cwd(), 'user-workspace');
+
+// Ensure user-workspace exists
+if (!fs.existsSync(terminalCwd)) {
+  fs.mkdirSync(terminalCwd, { recursive: true });
+}
+
+// Workspace File Syncing APIs
+app.post('/api/workspace/sync', async (req: any, res: any) => {
+  const { files } = req.body;
+  if (!Array.isArray(files)) {
+    return res.status(400).json({ error: 'Files array is required' });
+  }
+
+  try {
+    // Clear user-workspace folder first to delete removed files
+    if (fs.existsSync(terminalCwd)) {
+      await fsp.rm(terminalCwd, { recursive: true, force: true });
+    }
+    await fsp.mkdir(terminalCwd, { recursive: true });
+
+    // Write all files
+    for (const file of files) {
+      const filePath = path.join(terminalCwd, file.name);
+      const dirPath = path.dirname(filePath);
+      await fsp.mkdir(dirPath, { recursive: true });
+      await fsp.writeFile(filePath, file.content || '', 'utf8');
+    }
+
+    console.log(`Synced ${files.length} workspace files to container disk.`);
+    return res.json({ success: true, message: `Synced ${files.length} files to container disk.` });
+  } catch (error: any) {
+    console.error('Failed to sync workspace:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/workspace/write-file', async (req: any, res: any) => {
+  const { name, content } = req.body;
+  if (!name) return res.status(400).json({ error: 'File name is required' });
+
+  try {
+    const filePath = path.join(terminalCwd, name);
+    const dirPath = path.dirname(filePath);
+    await fsp.mkdir(dirPath, { recursive: true });
+    await fsp.writeFile(filePath, content || '', 'utf8');
+    return res.json({ success: true });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/workspace/delete-file', async (req: any, res: any) => {
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: 'File name is required' });
+
+  try {
+    const filePath = path.join(terminalCwd, name);
+    if (fs.existsSync(filePath)) {
+      await fsp.unlink(filePath);
+    }
+    return res.json({ success: true });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// Interactive terminal command executor state
+let activeProcess: any = null;
+let activeProcessOutput: string[] = [];
+let outputReadOffset = 0;
+
+// Interactive terminal command executor route
+app.post('/api/terminal/exec', (req: any, res: any) => {
+  const { command, cwd } = req.body;
+  if (!command) return res.status(400).json({ error: 'Command is required' });
+
+  const forbidden = ['rm -rf /', 'mkfs', 'dd', 'shutdown', 'reboot'];
+  if (forbidden.some(f => command.includes(f))) {
+    return res.status(403).json({ stdout: '', stderr: 'Access denied: Dangerous command detected.', exitCode: 1 });
+  }
+
+  const executionCwd = cwd ? path.resolve(terminalCwd, cwd) : terminalCwd;
+
+  // Handle cd command manually in server state!
+  if (command.startsWith('cd ')) {
+    const targetDir = command.substring(3).trim();
+    const newCwd = path.resolve(executionCwd, targetDir);
+    if (fs.existsSync(newCwd) && fs.statSync(newCwd).isDirectory()) {
+      terminalCwd = newCwd;
+      const relative = path.relative(path.resolve(process.cwd(), 'user-workspace'), terminalCwd);
+      return res.json({
+        stdout: `Directory changed to ${relative || '~'}`,
+        stderr: '',
+        exitCode: 0,
+        cwd: relative || '~',
+        isBackground: false
+      });
+    } else {
+      const relative = path.relative(path.resolve(process.cwd(), 'user-workspace'), terminalCwd);
+      return res.status(400).json({
+        stdout: '',
+        stderr: `cd: no such file or directory: ${targetDir}`,
+        exitCode: 1,
+        cwd: relative || '~',
+        isBackground: false
+      });
+    }
+  }
+
+  // Terminate any previous background process to keep system clean and leak-proof
+  if (activeProcess) {
+    try {
+      activeProcess.kill('SIGTERM');
+    } catch (e) {}
+    activeProcess = null;
+  }
+
+  // Clear output buffer for new command execution
+  activeProcessOutput = [];
+  outputReadOffset = 0;
+
+  // Run the command using shell to support all Node/NPM scripts
+  const shellProcess = spawn(command, {
+    cwd: terminalCwd,
+    shell: true,
+    env: { ...process.env, PORT: '3001' } // Force Next.js / dev servers to run on port 3001
+  });
+
+  activeProcess = shellProcess;
+
+  // Handle stdout
+  shellProcess.stdout.on('data', (data) => {
+    const text = data.toString();
+    activeProcessOutput.push(...text.split('\n'));
+  });
+
+  // Handle stderr
+  shellProcess.stderr.on('data', (data) => {
+    const text = data.toString();
+    activeProcessOutput.push(...text.split('\n'));
+  });
+
+  shellProcess.on('close', (code) => {
+    activeProcessOutput.push(`\n[Process exited with code ${code}]`);
+    if (activeProcess === shellProcess) {
+      activeProcess = null;
+    }
+  });
+
+  shellProcess.on('error', (err) => {
+    activeProcessOutput.push(`\n[Process error: ${err.message}]`);
+    if (activeProcess === shellProcess) {
+      activeProcess = null;
+    }
+  });
+
+  // Return immediately to make the UI non-blocking and let the user stream the logs
+  const relative = path.relative(path.resolve(process.cwd(), 'user-workspace'), terminalCwd);
+  return res.json({
+    stdout: `[Started: ${command}]`,
+    stderr: '',
+    exitCode: 0,
+    cwd: relative || '~',
+    isBackground: true
+  });
+});
+
+// Endpoint to poll new terminal logs
+app.get('/api/terminal/poll', (req: any, res: any) => {
+  const relative = path.relative(path.resolve(process.cwd(), 'user-workspace'), terminalCwd);
+  
+  if (outputReadOffset >= activeProcessOutput.length) {
+    return res.json({
+      logs: [],
+      isRunning: activeProcess !== null,
+      cwd: relative || '~'
+    });
+  }
+
+  const newLogs = activeProcessOutput.slice(outputReadOffset);
+  outputReadOffset = activeProcessOutput.length;
+
+  return res.json({
+    logs: newLogs,
+    isRunning: activeProcess !== null,
+    cwd: relative || '~'
+  });
+});
+
+// Endpoint to kill active terminal process
+app.post('/api/terminal/kill', (req: any, res: any) => {
+  if (activeProcess) {
+    try {
+      activeProcess.kill('SIGKILL');
+      activeProcess = null;
+      activeProcessOutput.push('\n[Process terminated by user]');
+      return res.json({ success: true });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+  return res.json({ success: false, message: 'No active process' });
+});
+
+// Sophisticated proxy mapping requests to background dev servers
+app.all('/proxy/:port', (req: any, res: any) => {
+  res.redirect(`/proxy/${req.params.port}/`);
+});
+
+app.all('/proxy/:port/*', (req: any, res: any) => {
+  const port = req.params.port;
+  const targetPath = req.params[0] || '';
+  const queryString = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
+  
+  const options = {
+    host: 'localhost',
+    port: parseInt(port),
+    path: `/${targetPath}${queryString}`,
+    method: req.method,
+    headers: {
+      ...req.headers,
+      host: `localhost:${port}` // Override Host header for dev servers
+    }
+  };
+
+  const proxyReq = http.request(options, (proxyRes) => {
+    res.writeHead(proxyRes.statusCode || 200, proxyRes.headers);
+    proxyRes.pipe(res);
+  });
+
+  proxyReq.on('error', (err) => {
+    res.status(502).send(`
+      <h2>Proxy Connection Failed</h2>
+      <p>Error connecting to port <b>${port}</b>: ${err.message}</p>
+      <p>Please make sure your Next.js/Vite server is running in the terminal and listening on port ${port}.</p>
+    `);
+  });
+
+  req.pipe(proxyReq);
+});
+
 
 // Configure Vite middleware / asset serving
 const startServer = async () => {

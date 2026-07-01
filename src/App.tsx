@@ -19,6 +19,7 @@ import {
 import { inject  } from '@vercel/analytics';
 
 import GitPanel from './components/GitPanel';
+// import AnalyticsPanel from './components/AnalyticsPanel';
 
 const LOCAL_STORAGE_FILES_KEY = 'coderunner_workspace_files';
 const LOCAL_STORAGE_SETTINGS_KEY = 'coderunner_workspace_settings';
@@ -115,6 +116,24 @@ export default function App() {
     localStorage.setItem(LOCAL_STORAGE_SETTINGS_KEY, JSON.stringify(settings));
   }, [settings]);
 
+
+    // Sync entire workspace on initial load and whenever files list structure changes (e.g. imports)
+  useEffect(() => {
+    const syncAll = async () => {
+      try {
+        await fetch('/api/workspace/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ files })
+        });
+        console.log('Synchronized entire workspace to server successfully');
+      } catch (err) {
+        console.error('Failed to sync workspace to server:', err);
+      }
+    };
+    syncAll();
+  }, [files.length]);
+
   // 5. File Operations Handlers
   const handleSelectFile = (id: string) => {
     setActiveFileId(id);
@@ -124,7 +143,24 @@ export default function App() {
   };
 
   const handleUpdateFileContent = (id: string, content: string) => {
-    setFiles(prev => prev.map(f => f.id === id ? { ...f, content } : f));
+    // setFiles(prev => prev.map(f => f.id === id ? { ...f, content } : f));
+      let fileName = '';
+    setFiles(prev => prev.map(f => {
+      if (f.id === id) {
+        fileName = f.name;
+        return { ...f, content };
+      }
+      return f;
+    }));
+
+    // Perform incremental background save to backend container
+    if (fileName) {
+      fetch('/api/workspace/write-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: fileName, content })
+      }).catch(err => console.error('Failed incremental file write:', err));
+    }
   };
 
   const handleCreateFile = (name: string, language: string) => {
@@ -139,9 +175,17 @@ export default function App() {
     setFiles(prev => [...prev, newFile]);
     setActiveFileId(newFile.id);
     setOpenTabs(prev => [...prev, newFile.id]);
+     // Async sync the created file to disk
+    fetch('/api/workspace/write-file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, content: defaultTemplate })
+    }).catch(err => console.error('Failed to sync created file:', err));
   };
 
   const handleRenameFile = (id: string, newName: string) => {
+    let oldName = '';
+    let fileContent = '';
     // Detect new language by extension
     let language = 'javascript';
     const ext = newName.substring(newName.lastIndexOf('.')).toLowerCase();
@@ -152,16 +196,57 @@ export default function App() {
       }
     }
 
-    setFiles(prev => prev.map(f => f.id === id ? { ...f, name: newName, language } : f));
+    // setFiles(prev => prev.map(f => f.id === id ? { ...f, name: newName, language } : f));
+    setFiles(prev => prev.map(f => {
+      if (f.id === id) {
+        oldName = f.name;
+        fileContent = f.content;
+        return { ...f, name: newName, language };
+      }
+      return f;
+    }));
+
+    if (oldName && oldName !== newName) {
+      // Sync rename (delete old and write new)
+      fetch('/api/workspace/delete-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: oldName })
+      }).then(() => {
+        fetch('/api/workspace/write-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newName, content: fileContent })
+        });
+      }).catch(err => console.error('Failed rename sync:', err));
+    }
   };
 
+
   const handleDeleteFile = (id: string) => {
-    setFiles(prev => prev.filter(f => f.id !== id));
+    // setFiles(prev => prev.filter(f => f.id !== id));
+    let fileName = '';
+    setFiles(prev => {
+      const target = prev.find(f => f.id === id);
+      if (target) fileName = target.name;
+      return prev.filter(f => f.id !== id);
+    });
+    
     setOpenTabs(prev => prev.filter(t => t !== id));
+
     
     if (activeFileId === id) {
       const remaining = files.filter(f => f.id !== id);
       setActiveFileId(remaining.length > 0 ? remaining[0].id : null);
+    }
+
+     // Sync delete on disk
+    if (fileName) {
+      fetch('/api/workspace/delete-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: fileName })
+      }).catch(err => console.error('Failed delete sync:', err));
     }
   };
 

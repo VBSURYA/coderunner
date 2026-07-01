@@ -1,3 +1,4 @@
+//@ts-nocheck
 import React, { useState, useEffect, useRef } from 'react';
 import { TerminalOutput, RunResult } from '../types';
 import { 
@@ -11,7 +12,13 @@ import {
   Copy,
   ChevronDown,
   ChevronUp,
-  X
+  X,
+
+  RefreshCw,
+  ExternalLink,
+  Square,
+  Play,
+  Globe
 } from 'lucide-react';
 
 interface TerminalAreaProps {
@@ -56,8 +63,13 @@ export default function TerminalArea({
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [currentCwd, setCurrentCwd] = useState('~');
   const terminalEndRef = useRef<HTMLDivElement>(null);
+const [isTerminalRunning, setIsTerminalRunning] = useState(false);
 
 
+ // Advanced Web Preview state
+  const [previewMode, setPreviewMode] = useState<'static' | 'server'>('server');
+  const [previewPort, setPreviewPort] = useState('3001');
+  const [previewKey, setPreviewKey] = useState(0);
 
   // Auto scroll to latest logs
   useEffect(() => {
@@ -76,6 +88,7 @@ export default function TerminalArea({
   // If we run an HTML page, automatically switch to the interactive Web Preview!
   useEffect(() => {
     if (activeHtmlCode) {
+      setPreviewMode('static');
       setActiveTab('preview');
       onToggleWebPreview(true);
     }
@@ -85,6 +98,41 @@ export default function TerminalArea({
     navigator.clipboard.writeText(text);
     alert('Copied output to clipboard!');
   };
+
+
+  // Continuous background terminal logs polling
+  useEffect(() => {
+    let intervalId: any = null;
+
+    const pollTerminal = async () => {
+      try {
+        const res = await fetch('/api/terminal/poll');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.logs && data.logs.length > 0) {
+            const cleanLogs = data.logs.filter((l: string) => l !== '');
+            if (cleanLogs.length > 0) {
+              setInteractiveLogs(prev => [...prev, ...cleanLogs]);
+            }
+          }
+          setIsTerminalRunning(data.isRunning);
+          if (data.cwd) {
+            setCurrentCwd(data.cwd);
+          }
+        }
+      } catch (err) {
+        console.error('Error polling terminal output:', err);
+      }
+    };
+
+    // Run immediately and start interval
+    pollTerminal();
+    intervalId = setInterval(pollTerminal, 1200);
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, []);
 
   const getLogColorClass = (type: string) => {
     switch (type) {
@@ -99,6 +147,19 @@ export default function TerminalArea({
     }
   };
 
+
+
+  const handleKillProcess = async () => {
+    try {
+      const res = await fetch('/api/terminal/kill', { method: 'POST' });
+      if (res.ok) {
+        setInteractiveLogs(prev => [...prev, '[Process terminate command dispatched]']);
+        setIsTerminalRunning(false);
+      }
+    } catch (err) {
+      console.error('Error dispatching kill command:', err);
+    }
+  };
 
 
   // Command Execution Handler for Interactive Terminal
@@ -127,7 +188,8 @@ export default function TerminalArea({
         '  help             Display helper command list',
         '  ls               List files and directories in current path',
         '  pwd              Print working directory path',
-        '  npm run dev      Simulate background compilation/dev server',
+        '  npm run dev      Start development server on port 3001',
+        '  npm install      Install packages from package.json',
         '  npm run build    Bundle project and run production optimization builds',
         '  git status       Check active repository modifications',
         '  node <file>      Execute a local javascript file using Node server runtime',
@@ -136,42 +198,43 @@ export default function TerminalArea({
       return;
     }
 
-    // Special Simulated npm operations to make it feel exactly like VS Code
-    if (cmd === 'npm run dev' || cmd === 'npm start') {
-      setInteractiveLogs(prev => [
-        ...prev,
-        '[npm] > dev-server@1.0.0 dev',
-        '[npm] > vite',
-        '',
-        '  VITE v6.2.3  ready in 242 ms',
-        '  ➜  Local:   http://localhost:3000/',
-        '  ➜  Network: use --host to expose',
-        '  ➜  press h + enter to show help',
-        ''
-      ]);
-      return;
-    }
+    // // Special Simulated npm operations to make it feel exactly like VS Code
+    // if (cmd === 'npm run dev' || cmd === 'npm start') {
+    //   setInteractiveLogs(prev => [
+    //     ...prev,
+    //     '[npm] > dev-server@1.0.0 dev',
+    //     '[npm] > vite',
+    //     '',
+    //     '  VITE v6.2.3  ready in 242 ms',
+    //     '  ➜  Local:   http://localhost:3000/',
+    //     '  ➜  Network: use --host to expose',
+    //     '  ➜  press h + enter to show help',
+    //     ''
+    //   ]);
+    //   return;
+    // }
 
-    if (cmd === 'npm run build' || cmd === 'npm run compile') {
-      setInteractiveLogs(prev => [
-        ...prev,
-        '[npm] > production-builder@1.0.0 build',
-        '[npm] > vite build',
-        '',
-        'vite v6.2.3 compiling assets...',
-        '✓ 42 modules transformed.',
-        'dist/index.html                     0.84 kB │ gzip:  0.42 kB',
-        'dist/assets/index-D783bC11.css      4.12 kB │ gzip:  1.22 kB',
-        'dist/assets/index-G98H3C44.js     182.15 kB │ gzip: 54.12 kB',
-        '✓ built in 921ms',
-        'Build sequence completed successfully! Output stored inside dist/ directory.',
-        ''
-      ]);
-      return;
-    }
+    // if (cmd === 'npm run build' || cmd === 'npm run compile') {
+    //   setInteractiveLogs(prev => [
+    //     ...prev,
+    //     '[npm] > production-builder@1.0.0 build',
+    //     '[npm] > vite build',
+    //     '',
+    //     'vite v6.2.3 compiling assets...',
+    //     '✓ 42 modules transformed.',
+    //     'dist/index.html                     0.84 kB │ gzip:  0.42 kB',
+    //     'dist/assets/index-D783bC11.css      4.12 kB │ gzip:  1.22 kB',
+    //     'dist/assets/index-G98H3C44.js     182.15 kB │ gzip: 54.12 kB',
+    //     '✓ built in 921ms',
+    //     'Build sequence completed successfully! Output stored inside dist/ directory.',
+    //     ''
+    //   ]);
+    //   return;
+    // }
 
     // Call API Route Executor for real server commands
     try {
+      setIsTerminalRunning(true);
       const response = await fetch('/api/terminal/exec', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -196,29 +259,47 @@ export default function TerminalArea({
             `exec-error (Invalid JSON): ${responseText.substring(0, 300)}`
           ]);
         }
+        setIsTerminalRunning(false);
         return;
       }
 
 
 
       if (response.ok && data) {
-        const data = await response.json();
-        const results: string[] = [];
-        if (data.stdout) results.push(data.stdout);
-        if (data.stderr) results.push(data.stderr);
+        // const data = await response.json();
+        // const results: string[] = [];
+        // if (data.stdout) results.push(data.stdout);
+        // if (data.stderr) results.push(data.stderr);
         
-        if (data.cwd) {
-          const relative = data.cwd.substring(data.cwd.lastIndexOf('/') + 1);
-          setCurrentCwd(relative || '~');
-        }
+        // if (data.cwd) {
+        //   const relative = data.cwd.substring(data.cwd.lastIndexOf('/') + 1);
+        //   setCurrentCwd(relative || '~');
+        // }
 
-        setInteractiveLogs(prev => [...prev, ...results.join('\n').split('\n')]);
+        // setInteractiveLogs(prev => [...prev, ...results.join('\n').split('\n')]);
+
+          if (data.stdout) {
+          setInteractiveLogs(prev => [...prev, data.stdout]);
+        }
+        if (data.stderr) {
+          setInteractiveLogs(prev => [...prev, data.stderr]);
+        }
+        if (data.cwd) {
+          setCurrentCwd(data.cwd);
+        }
+        if (data.isBackground) {
+          setIsTerminalRunning(true);
+        } else {
+          setIsTerminalRunning(false);
+        }
       } else {
         // const data = await response.json();
         setInteractiveLogs(prev => [...prev, `exec-error: ${data?.stderr || 'Command execution failed.'}`]);
+      setIsTerminalRunning(false);
       }
     } catch (err: any) {
       setInteractiveLogs(prev => [...prev, `terminal-error: Failed to contact backend container. (${err.message})`]);
+      setIsTerminalRunning(false);
     }
   };
 
@@ -449,6 +530,8 @@ export default function TerminalArea({
             </div>
 
             {/* Prompt input field */}
+
+             <div className="flex items-center justify-between bg-[#1e1e1e] pt-2 border-t border-[#333333] shrink-0">
             <form onSubmit={handleTerminalSubmit} className="flex items-center gap-1 bg-[#1e1e1e] pt-2 border-t border-[#333333] shrink-0">
               <span className="text-emerald-400 select-none">coderunner@ide</span>
               <span className="text-[#cccccc] select-none">:</span>
@@ -462,11 +545,30 @@ export default function TerminalArea({
                 onChange={(e) => setTerminalInput(e.target.value)}
                 onKeyDown={handleTerminalKeyDown}
                 className="flex-grow bg-transparent text-white border-none outline-none font-mono text-xs p-0 focus:ring-0 focus:ring-offset-0"
-                placeholder="Type a command (ls, npm run build, help...)"
+                placeholder={isTerminalRunning ? "Process is running in background..." : "Type a command (ls, npm run dev, help...)"}
                 autoComplete="off"
+                disabled={isTerminalRunning}
                 autoFocus
               />
             </form>
+            {isTerminalRunning && (
+                <div className="flex items-center gap-2 pl-3">
+                  <span className="flex items-center gap-1 text-amber-400 text-[10px] uppercase font-bold tracking-wider select-none animate-pulse">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                    Running
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleKillProcess}
+                    className="flex items-center gap-1 bg-red-950/40 border border-red-500/30 text-red-400 hover:bg-red-900/40 hover:text-red-200 px-2 py-0.5 rounded transition text-[10px] font-sans font-bold"
+                    title="Stop background process"
+                  >
+                    <Square className="w-2.5 h-2.5 fill-red-400" />
+                    <span>Stop</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -488,24 +590,104 @@ export default function TerminalArea({
 
         {/* TAB 3: WEB PREVIEW SANDBOX (IFRAME) */}
         {activeTab === 'preview' && (
-          <div className="w-full h-full relative bg-white">
-            {activeHtmlCode ? (
-              <iframe
-                id="web-preview-iframe"
-                srcDoc={activeHtmlCode}
-                title="Web Sandbox Preview"
-                sandbox="allow-scripts allow-modals"
-                className="w-full h-full border-none bg-white"
-              />
-            ) : (
-              <div className="absolute inset-0 bg-[#1e1e1e] text-gray-500 flex flex-col items-center justify-center p-6 text-center select-none">
-                <Eye className="w-10 h-10 text-gray-700 mb-2 animate-bounce" />
-                <h4 className="text-gray-400 font-semibold text-xs">Web Preview is currently sleeping</h4>
-                <p className="text-[11px] text-gray-600 mt-1 max-w-[340px]">
-                  Open an HTML file (like <code className="bg-[#252526] text-[#007acc] px-1 py-0.5 rounded">index.html</code>) and click **Run Code** to automatically spin up a hot-reload interactive browser iframe!
-                </p>
+          <div className="w-full h-full flex flex-col bg-[#1e1e1e]">
+            {/* Elegant Preview Toolbar */}
+            <div className="flex items-center justify-between px-3 py-1.5 bg-[#252526] border-b border-[#1e1e1e] shrink-0 text-[11px] text-[#cccccc]">
+              <div className="flex items-center gap-3">
+                {/* Mode Selector Toggle */}
+                <div className="flex bg-[#1e1e1e] p-0.5 rounded border border-[#333333]">
+                  <button
+                    onClick={() => setPreviewMode('static')}
+                    className={`px-2.5 py-0.5 rounded transition ${
+                      previewMode === 'static' 
+                        ? 'bg-[#007acc] text-white font-semibold' 
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Static HTML File
+                  </button>
+                  <button
+                    onClick={() => setPreviewMode('server')}
+                    className={`px-2.5 py-0.5 rounded transition ${
+                      previewMode === 'server' 
+                        ? 'bg-[#007acc] text-white font-semibold' 
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Container Dev Server
+                  </button>
+                </div>
+
+                {previewMode === 'server' && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-gray-400">Port:</span>
+                    <input
+                      type="text"
+                      value={previewPort}
+                      onChange={(e) => setPreviewPort(e.target.value)}
+                      className="w-12 bg-[#1e1e1e] text-amber-400 border border-[#444444] rounded px-1 py-0.5 text-center font-bold font-mono outline-none focus:border-[#007acc]"
+                    />
+                  </div>
+                )}
               </div>
-            )}
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPreviewKey(prev => prev + 1)}
+                  className="flex items-center gap-1 bg-[#333333] hover:bg-[#444444] text-white px-2.5 py-1 rounded transition cursor-pointer"
+                  title="Force Reload Preview"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span>Reload</span>
+                </button>
+                {previewMode === 'server' && (
+                  <a
+                    href={`/proxy/${previewPort}/`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1 bg-[#007acc] hover:bg-[#0062a3] text-white px-2.5 py-1 rounded transition font-semibold"
+                    title="Open in New Browser Tab (Recommended)"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    <span>Open Tab</span>
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Preview Viewport */}
+            <div className="flex-1 w-full bg-white relative">
+              {previewMode === 'static' ? (
+                activeHtmlCode ? (
+                  <iframe
+                    key={`static-${previewKey}`}
+                    id="web-preview-iframe"
+                    srcDoc={activeHtmlCode}
+                    title="Web Sandbox Static Preview"
+                    sandbox="allow-scripts allow-modals"
+                    className="w-full h-full border-none bg-white"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-[#1e1e1e] text-gray-500 flex flex-col items-center justify-center p-6 text-center select-none">
+                    <Eye className="w-10 h-10 text-gray-700 mb-2 animate-bounce" />
+                    <h4 className="text-gray-400 font-semibold text-xs">Web Preview is currently sleeping</h4>
+                    <p className="text-[11px] text-gray-600 mt-1 max-w-[340px]">
+                      Open an HTML file (like <code className="bg-[#252526] text-[#007acc] px-1 py-0.5 rounded">index.html</code>) and click **Run Code** to automatically spin up a hot-reload interactive browser iframe!
+                    </p>
+                  </div>
+                )
+              ) : (
+                <iframe
+                  key={`server-${previewPort}-${previewKey}`}
+                  id="web-server-preview-iframe"
+                  src={`/proxy/${previewPort}/`}
+                  title="Web Container Server Dev Preview"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                  className="w-full h-full border-none bg-white"
+                />
+              )}
+            </div>
+              
           </div>
         )}
 
