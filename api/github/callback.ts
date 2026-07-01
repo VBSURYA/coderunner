@@ -1,50 +1,59 @@
 export default async function handler(req: any, res: any) {
   const code = req.query.code;
-  
+
   if (!code) {
-    return res.status(400).send('Authentication code is missing.');
+    return res.status(400).send("Authentication code is missing.");
   }
 
-  const clientId = import.meta.GITHUB_CLIENT_ID || import.meta.VITE_GITHUB_CLIENT_ID;
-  const clientSecret = import.meta.GITHUB_CLIENT_SECRET;
+  const clientId =
+    (process.env as any).GITHUB_CLIENT_ID ||
+    (process.env as any).VITE_GITHUB_CLIENT_ID;
+  const clientSecret = (process.env as any).GITHUB_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    return res.status(500).send('GitHub Client ID or Client Secret not configured on backend.');
+    return res
+      .status(500)
+      .send("GitHub Client ID or Client Secret not configured on backend.");
   }
 
   try {
     // 1. Exchange OAuth code for Access Token
-    const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+    const tokenResponse = await fetch(
+      "https://github.com/login/oauth/access_token",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+        }),
       },
-      body: JSON.stringify({
-        client_id: clientId,
-        client_secret: clientSecret,
-        code
-      })
-    });
+    );
 
     if (!tokenResponse.ok) {
-      throw new Error(`GitHub token exchange failed: ${tokenResponse.statusText}`);
+      throw new Error(
+        `GitHub token exchange failed: ${tokenResponse.statusText}`,
+      );
     }
 
-    const tokenData = await tokenResponse.json() as any;
+    const tokenData = (await tokenResponse.json()) as any;
     const accessToken = tokenData.access_token;
 
     if (!accessToken) {
-      throw new Error('No access token returned from GitHub');
+      throw new Error("No access token returned from GitHub");
     }
 
     // 2. Fetch authenticated user details to confirm login identity
-    const userResponse = await fetch('https://api.github.com/user', {
+    const userResponse = await fetch("https://api.github.com/user", {
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Accept': 'application/json',
-        'User-Agent': 'CodeRunner-IDE'
-      }
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+        "User-Agent": "CodeRunner-IDE",
+      },
     });
 
     let githubUser = null;
@@ -53,7 +62,7 @@ export default async function handler(req: any, res: any) {
     }
 
     // 3. Return lightweight HTML that closes the popup and transmits credentials safely
-    res.setHeader('Content-Type', 'text/html');
+    res.setHeader("Content-Type", "text/html");
     return res.status(200).send(`
       <!DOCTYPE html>
       <html>
@@ -113,7 +122,7 @@ export default async function handler(req: any, res: any) {
       </html>
     `);
   } catch (error: any) {
-    console.error('GitHub OAuth Callback Error:', error);
+    console.error("GitHub OAuth Callback Error:", error);
     return res.status(500).send(`
       <html>
         <body style="background-color: #1e1e1e; color: #f87171; font-family: sans-serif; padding: 40px; text-align: center;">
