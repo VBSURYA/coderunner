@@ -497,7 +497,7 @@ export default function App() {
           </span>
         </div>
       </footer>
-      <Analytics/>
+
     </div>
   );
 }
