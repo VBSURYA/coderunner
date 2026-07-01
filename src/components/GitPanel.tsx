@@ -130,7 +130,7 @@ export default function GitPanel({
           headers: {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json',
-            'User-Agent': 'CodeRunner-IDE'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
           }
         });
         if (response.ok) {
@@ -192,7 +192,7 @@ export default function GitPanel({
         headers: {
           'Authorization': `Bearer ${patTokenInput.trim()}`,
           'Accept': 'application/json',
-          'User-Agent': 'CodeRunner-IDE'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
       });
 
@@ -237,9 +237,9 @@ export default function GitPanel({
     try {
       // Determine default branch or use current selected
       let activeBranch = branch;
-      if (!branch) {
+    //   if (!branch) {
         const repoResponse = await fetch(`https://api.github.com/repos/${repoFullName}`, {
-          headers: token ? { 'Authorization': `Bearer ${token}`,'User-Agent': 'CodeRunner-IDE' } : {'User-Agent': 'CodeRunner-IDE'}
+          headers: token ? { 'Authorization': `Bearer ${token}`,'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } : {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
         });
         if (repoResponse.ok) {
           const repoData = await repoResponse.json();
@@ -252,16 +252,16 @@ export default function GitPanel({
             setBranch(defaultBranch);
           }
         }
-      }
+    //   }
 
       // Fetch git tree recursively
       const treeUrl = `https://api.github.com/repos/${repoFullName}/branches/${activeBranch}`;
       const branchRes = await fetch(treeUrl, {
         headers: token ? { 
           'Authorization': `Bearer ${token}`,
-          'User-Agent': 'CodeRunner-IDE'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         } : {
-          'User-Agent': 'CodeRunner-IDE'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
       });
 
@@ -275,7 +275,7 @@ export default function GitPanel({
       // Now fetch complete tree recursively
       const recurseTreeUrl = `https://api.github.com/repos/${repoFullName}/git/trees/${treeSha}?recursive=1`;
       const treeRes = await fetch(recurseTreeUrl, {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        headers: token ? { 'Authorization': `Bearer ${token}`,'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } : {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
       });
 
       if (!treeRes.ok) throw new Error('Failed to retrieve recursive file tree from GitHub.');
@@ -414,7 +414,7 @@ export default function GitPanel({
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'CodeRunner-IDE'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       };
 
       // 1. Get current branch ref (latest commit SHA)
