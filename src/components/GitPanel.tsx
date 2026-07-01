@@ -130,7 +130,7 @@ export default function GitPanel({
           headers: {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            'User-Agent': 'CodeRunner-IDE'
           }
         });
         if (response.ok) {
@@ -327,8 +327,13 @@ export default function GitPanel({
       
       // Limit to first 25 files to avoid hitting API rate limits during bulk import
       const limitedNodes = fileNodes.slice(0, 25);
-
-      for (const node of limitedNodes) {
+      let loadCount = 0;
+      for (const node of fileNodes) {
+        loadCount++;
+        setStatusMessage({ 
+          text: `Downloading file ${loadedCount} of ${fileNodes.length}: ${node.path}...`, 
+          type: 'info' 
+        });
         const blobUrl = node.url;
         const blobRes = await fetch(blobUrl, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {}
