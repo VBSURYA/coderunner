@@ -30,6 +30,7 @@ import GitPanel from "./components/GitPanel";
 import Banner300x250 from "./components/ads/Banner300x250";
 import NativeBanner from "./components/ads/NativeBanner";
 import Popunder from "./components/ads/Popunder";
+import PrivacyPolicy from "./components/PrivacyPolicy";
 // import AnalyticsPanel from './components/AnalyticsPanel';
 
 const LOCAL_STORAGE_FILES_KEY = "coderunner_workspace_files";
@@ -37,6 +38,23 @@ const LOCAL_STORAGE_SETTINGS_KEY = "coderunner_workspace_settings";
 
 export default function App() {
   inject(); // Initialize Vercel Analytics
+
+  // Routing state for page/view switching
+  const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  const navigateTo = (path: string) => {
+    window.history.pushState({}, "", path);
+    setCurrentPath(path);
+  };
+
   // 1. Files & Workspace State
   const [files, setFiles] = useState<FileItem[]>(() => {
     const saved = localStorage.getItem(LOCAL_STORAGE_FILES_KEY);
@@ -481,6 +499,10 @@ export default function App() {
   };
 
   // 8. Sliding Collapsible Drawer Panel (Explorer viewport)
+  if (currentPath === "/privacy") {
+    return <PrivacyPolicy onBack={() => navigateTo("/")} />;
+  }
+
   return (
     <div
       id="workspace-layout-root"
@@ -662,6 +684,13 @@ export default function App() {
           <span className="hidden md:inline hover:bg-[#0062a3] px-1.5 py-0.5 rounded cursor-pointer">
             ✓ Prettier
           </span>
+          <button
+            onClick={() => navigateTo("/privacy")}
+            className="hover:bg-[#0062a3] px-1.5 py-0.5 rounded cursor-pointer transition font-semibold"
+            title="View Privacy Policy"
+          >
+            Privacy Policy
+          </button>
         </div>
       </footer>
     </div>
