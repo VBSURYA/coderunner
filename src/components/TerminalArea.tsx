@@ -20,6 +20,7 @@ import {
   Play,
   Globe
 } from 'lucide-react';
+import Banner300x250 from './ads/Banner300x250';
 
 interface TerminalAreaProps {
   terminalLogs: TerminalOutput[];
@@ -510,6 +511,8 @@ const [isTerminalRunning, setIsTerminalRunning] = useState(false);
                   </div>
                 )}
                 <div ref={logEndRef} />
+
+                    <Banner300x250 />
               </>
             )}
           </div>

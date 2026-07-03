@@ -1,4 +1,4 @@
-import AdIframe from "./ADIFrame";
+import AdIframe from "./AdIframe";
 
 export default function Banner300x250() {
   return (

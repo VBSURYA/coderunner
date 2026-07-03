@@ -613,7 +613,9 @@ export default function App() {
         </div>
       </div>
 
-      {/* <AdBanner /> */}
+      <div className="fixed bottom-10 right-4 z-50 bg-[#1e1e1e] border border-[#333333] shadow-lg rounded p-1 hidden lg:block">
+        <Banner300x250 />
+      </div>
 
       {/* 3. Sophisticated Dark: Visual Studio Code Blue Status Bar */}
       <footer className="h-6 bg-[#007acc] text-white flex items-center justify-between px-3 text-[11px] shrink-0 select-none">
@@ -645,7 +647,7 @@ export default function App() {
           </div>
         </div>
 
-        <Banner300x250 />
+    
 
         <div className="flex items-center gap-4">
           <span className="hidden sm:inline hover:bg-[#0062a3] px-1.5 py-0.5 rounded cursor-pointer">

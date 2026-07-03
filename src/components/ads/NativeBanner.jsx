@@ -1,11 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export default function NativeBanner() {
-  useEffect(() => {
-    const container = document.getElementById(
-      "container-9109b54ae6d24d60cdfd913c403a6e09"
-    );
+  const containerRef = useRef(null);
 
+  useEffect(() => {
+    const container = containerRef.current;
     if (!container) return;
 
     const script = document.createElement("script");
@@ -17,9 +16,13 @@ export default function NativeBanner() {
     script.setAttribute("data-cfasync", "false");
 
     container.appendChild(script);
+
+    return () => {
+      container.innerHTML = "";
+    };
   }, []);
 
   return (
-    <div id="container-9109b54ae6d24d60cdfd913c403a6e09"></div>
+    <div ref={containerRef} id="container-9109b54ae6d24d60cdfd913c403a6e09"></div>
   );
 }
