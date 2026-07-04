@@ -87,15 +87,7 @@ export default function Sidebar({
       <div className="flex flex-col items-center gap-4 w-full">
         {/* Quick Help Indicator */}
         <div className="relative group w-full flex justify-center">
-          <a
-            href="https://ai.studio/build"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2.5 rounded-lg text-[#cccccc]/40 hover:text-white hover:bg-white/5 transition-all"
-            title="AI Studio Documentation"
-          >
-            <HelpCircle className="w-5 h-5" />
-          </a>
+          
           <div className="absolute left-14 top-1/2 -translate-y-1/2 bg-[#252526] text-[#cccccc] text-[10px] font-semibold tracking-wide py-1 px-2.5 rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 border border-[#454545]">
             AI Studio Documentation
           </div>
