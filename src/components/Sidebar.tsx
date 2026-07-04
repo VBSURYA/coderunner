@@ -8,10 +8,11 @@ import {
   Terminal,
   Code,
   GitBranch,
-  Github
+  Github,
+  Gauge
 } from 'lucide-react';
 
-export type SidebarTab = 'explorer' | 'git' | null;
+export type SidebarTab = 'explorer' | 'git' | 'speedtest' | null;
 
 interface SidebarProps {
   activeTab: SidebarTab;
@@ -31,11 +32,18 @@ export default function Sidebar({
       label: 'File Explorer',
       hotkey: 'Ctrl+Shift+E'
     },
-     {
+    {
       id: 'git' as const,
       icon: GitBranch,
       label: 'Source Control & GitHub',
       hotkey: 'Ctrl+Shift+G'
+    },
+    {
+      id: 'speedtest' as const,
+      // Using the Speedometer icon from lucide-react for speed test
+      icon: Gauge,
+      label: 'Speed Test',
+      hotkey: 'Ctrl+Shift+S'
     }
   ];
 

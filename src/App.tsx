@@ -11,7 +11,7 @@ import Sidebar, { SidebarTab } from "./components/Sidebar";
 import FileTree from "./components/FileTree";
 import EditorArea from "./components/EditorArea";
 import TerminalArea from "./components/TerminalArea";
-import AdBanner from "./components/AdBanner";
+import SpeedTest from './components/SpeedTest';
 import {
   Terminal as TerminalIcon,
   Settings as SettingsIcon,
@@ -79,8 +79,12 @@ export default function App() {
 
   // 2. Sidebar Navigation Layout State
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("explorer");
-
-  // 3. Settings Configuration State
+  // Navigate to speed test when sidebar tab changes
+  useEffect(() => {
+    if (sidebarTab === "speedtest") {
+      navigateTo("/speedtest");
+    }
+  }, [sidebarTab]);
   const [settings, setSettings] = useState<EditorSettings>(() => {
     const saved = localStorage.getItem(LOCAL_STORAGE_SETTINGS_KEY);
     if (saved) {
@@ -499,6 +503,9 @@ export default function App() {
   };
 
   // 8. Sliding Collapsible Drawer Panel (Explorer viewport)
+  if (currentPath === "/speedtest") {
+    return <SpeedTest />;
+  }
   if (currentPath === "/privacy") {
     return <PrivacyPolicy onBack={() => navigateTo("/")} />;
   }
