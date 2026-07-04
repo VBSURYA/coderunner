@@ -49,6 +49,13 @@ cd coderunner
 npm install
 ```
 
+
+
+Developer Value Proposition (Why Engineers Love It)
+Zero Configuration, Absolute Simplicity: Paste any public or private repository, authenticate, edit, and push directly with no complex Git installation, SSH keys, or server setups.
+Zero-Storage Privacy First: We do not store any source code, temporary files, or secrets on our servers. All code states reside entirely in transient browser memory and are permanently discarded when you close the tab, keeping proprietary logic 100% confidential.
+The Ultimate Holiday & On-the-Go Companion: Ideal for sudden production emergencies when you are traveling, on vacation, or carrying only a smartphone or tablet. Perform quick builds, run simulation outputs, view diffs, and push hotfixes from any sun lounger in 60 seconds!
+
 ### 3. Start Development Server
 ```bash
 npm run dev
