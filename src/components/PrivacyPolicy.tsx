@@ -1,6 +1,6 @@
 import React from "react";
 import { Shield, ArrowLeft, Lock, FileText, Cpu, Eye, AlertCircle } from "lucide-react";
-
+import Seo from './Seo';
 interface PrivacyPolicyProps {
   onBack: () => void;
 }
@@ -8,6 +8,7 @@ interface PrivacyPolicyProps {
 export default function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
   return (
     <div className="min-h-screen bg-[#1e1e1e] text-[#cccccc] font-sans antialiased overflow-y-auto">
+      <Seo title="Privacy Policy – CodeRunner" description="Read CodeRunner’s privacy policy outlining data collection, usage, and protection practices." keywords="privacy, policy, CodeRunner, data protection, user data" canonical="https://zeroconfigide.netlify.app/privacy" />
       {/* Header Area */}
       <header className="sticky top-0 z-50 bg-[#252526] border-b border-[#1e1e1e] px-6 py-4 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
