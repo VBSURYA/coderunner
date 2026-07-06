@@ -515,7 +515,7 @@ export default function App() {
       id="workspace-layout-root"
       className="flex flex-col h-screen w-screen bg-[#1e1e1e] text-[#cccccc] overflow-hidden font-sans antialiased"
     >
-      <Popunder />
+      {/* <Popunder /> */}
       {/* 1. Sophisticated Dark: Visual Studio Code Header Bar */}
       <header className="flex items-center justify-between px-4 h-9 bg-[#323233] border-b border-[#1e1e1e] shrink-0 select-none text-[#cccccc]">
         <div className="flex items-center gap-4 text-xs font-normal">
@@ -572,7 +572,7 @@ export default function App() {
         </div>
       </header>
 
-<NativeBanner />
+{/* <NativeBanner /> */}
       {/* 2. Primary Workspace Body */}
       <div className="flex-1 flex min-h-0">
         {/* VS Code utility Activity Rail (Vertical Sidebar icons) */}
@@ -642,9 +642,9 @@ export default function App() {
         </div>
       </div>
 
-      <div className="fixed bottom-10 right-4 z-50 bg-[#1e1e1e] border border-[#333333] shadow-lg rounded p-1 hidden lg:block">
+      {/* <div className="fixed bottom-10 right-4 z-50 bg-[#1e1e1e] border border-[#333333] shadow-lg rounded p-1 hidden lg:block">
         <Banner300x250 />
-      </div>
+      </div> */}
 
       {/* 3. Sophisticated Dark: Visual Studio Code Blue Status Bar */}
       <footer className="h-6 bg-[#007acc] text-white flex items-center justify-between px-3 text-[11px] shrink-0 select-none">

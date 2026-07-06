@@ -512,7 +512,7 @@ const [isTerminalRunning, setIsTerminalRunning] = useState(false);
                 )}
                 <div ref={logEndRef} />
 
-                    <Banner300x250 />
+                    {/* <Banner300x250 /> */}
               </>
             )}
           </div>
