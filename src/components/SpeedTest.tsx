@@ -221,7 +221,7 @@ export default function SpeedTest() {
 
   return (
     <>
-      <Seo title="Speed Test – CodeRunner" description="Measure your internet speed (download, upload, latency) with CodeRunner's accurate web‑based speed test." keywords="speed test, internet, download, upload, latency, CodeRunner" canonical="https://zeroconfigide.netlify.app/speedtest" />
+      <Seo title="Speed Test – CodeRunner" description="Measure your internet speed (download, upload, latency) with CodeRunner's accurate web‑based speed test." keywords="speed test,internet speed test, internet, download, upload, latency, CodeRunner" canonical="https://zeroconfigide.netlify.app/speedtest" />
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
