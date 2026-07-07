@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import { ConsentProvider, ConsentContext } from "./context/ConsentContext";
+import { ConsentBanner } from "./components/ConsentBanner";
+
 import {
   FileItem,
   TerminalOutput,
@@ -38,6 +41,25 @@ const LOCAL_STORAGE_SETTINGS_KEY = "coderunner_workspace_settings";
 
 export default function App() {
   inject(); // Initialize Vercel Analytics
+
+  const { consentGiven } = useContext(ConsentContext);
+
+  // Load third‑party ad scripts only after consent
+  useEffect(() => {
+    if (!consentGiven) return;
+    // Google Adsense
+    const adsScript = document.createElement('script');
+    adsScript.async = true;
+    adsScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5673387170560268';
+    adsScript.crossOrigin = 'anonymous';
+    document.body.appendChild(adsScript);
+    // Google Tag Manager
+    const gtmScript = document.createElement('script');
+    gtmScript.async = true;
+    gtmScript.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-5TK8K27H';
+    document.body.appendChild(gtmScript);
+    // Additional analytics scripts can be added here similarly
+  }, [consentGiven]);
 
   // Routing state for page/view switching
   const [currentPath, setCurrentPath] = useState(() => window.location.pathname);
@@ -506,206 +528,211 @@ export default function App() {
   if (currentPath === "/speedtest") {
     return <SpeedTest />;
   }
-  if (currentPath === "/privacy") {
+if (currentPath === "/privacy") {
     return <PrivacyPolicy onBack={() => navigateTo("/")} />;
   }
 
   return (
-    <div
-      id="workspace-layout-root"
-      className="flex flex-col h-screen w-screen bg-[#1e1e1e] text-[#cccccc] overflow-hidden font-sans antialiased"
-    >
-      <Seo
-        title="Zero Config IDE - CodeRunner Online Compiler"
-        description="Zero-config online IDE & compiler. Write, run, and share code instantly in your browser. Supports multiple languages."
-        keywords="code runner, online code runner, web ide, zero config ide, online compiler, run code online, multi-language compiler, browser ide, compile code online, javascript compiler, python compiler"
-        canonical="https://zeroconfigide.netlify.app/"
-      />
-      {/* <Popunder /> */}
-      {/* 1. Sophisticated Dark: Visual Studio Code Header Bar */}
-      <header className="flex items-center justify-between px-4 h-9 bg-[#323233] border-b border-[#1e1e1e] shrink-0 select-none text-[#cccccc]">
-        <div className="flex items-center gap-4 text-xs font-normal">
-          {/* Logo Icon */}
-          <div className="flex items-center gap-1.5 font-semibold text-white">
-            <Code className="w-3.5 h-3.5 text-[#007acc]" />
-            <span className="hidden sm:inline text-[11px] uppercase tracking-wider text-gray-300">
-              File
-            </span>
-          </div>
-          <span className="cursor-pointer hover:bg-[#474749] px-1.5 py-0.5 rounded transition">
-            Edit
-          </span>
-          <span className="hidden md:inline cursor-pointer hover:bg-[#474749] px-1.5 py-0.5 rounded transition">
-            Selection
-          </span>
-          <span className="cursor-pointer hover:bg-[#474749] px-1.5 py-0.5 rounded transition">
-            View
-          </span>
-          <span className="hidden md:inline cursor-pointer hover:bg-[#474749] px-1.5 py-0.5 rounded transition">
-            Go
-          </span>
-          <span className="cursor-pointer hover:bg-[#474749] px-1.5 py-0.5 rounded transition">
-            Run
-          </span>
-          <span className="hidden sm:inline cursor-pointer hover:bg-[#474749] px-1.5 py-0.5 rounded transition">
-            Terminal
-          </span>
-          <span className="cursor-pointer hover:bg-[#474749] px-1.5 py-0.5 rounded transition">
-            Help
-          </span>
-        </div>
-
-        {/* Workspace App Title */}
-        <div className="flex-1 text-center text-[11px] text-[#858585] truncate font-mono px-4">
-          {files.find((f) => f.id === activeFileId)?.name || "index.js"} —
-          CodeRunner Workspace (Vite + NodeVM)
-        </div>
-
-        {/* Window controls mimicking desktop app */}
-        <div className="flex items-center gap-1.5">
-          <div
-            className="w-2.5 h-2.5 bg-[#4f4f4f] hover:bg-[#ff5f56] rounded-full transition cursor-pointer"
-            title="Close"
+    <>
+      <ConsentProvider>
+        <ConsentBanner />
+        <div
+          id="workspace-layout-root"
+          className="flex flex-col h-screen w-screen bg-[#1e1e1e] text-[#cccccc] overflow-hidden font-sans antialiased"
+        >
+          <Seo
+            title="Zero Config IDE - CodeRunner Online Compiler"
+            description="Zero-config online IDE & compiler. Write, run, and share code instantly in your browser. Supports multiple languages."
+            keywords="code runner, online code runner, web ide, zero config ide, online compiler, run code online, multi-language compiler, browser ide, compile code online, javascript compiler, python compiler"
+            canonical="https://zeroconfigide.netlify.app/"
           />
-          <div
-            className="w-2.5 h-2.5 bg-[#4f4f4f] hover:bg-[#ffbd2e] rounded-full transition cursor-pointer"
-            title="Minimize"
-          />
-          <div
-            className="w-2.5 h-2.5 bg-[#4f4f4f] hover:bg-[#27c93f] rounded-full transition cursor-pointer"
-            title="Maximize"
-          />
-        </div>
-      </header>
+          {/* <Popunder /> */}
+          {/* 1. Sophisticated Dark: Visual Studio Code Header Bar */}
+          <header className="flex items-center justify-between px-4 h-9 bg-[#323233] border-b border-[#1e1e1e] shrink-0 select-none text-[#cccccc]">
+            <div className="flex items-center gap-4 text-xs font-normal">
+              {/* Logo Icon */}
+              <div className="flex items-center gap-1.5 font-semibold text-white">
+                <Code className="w-3.5 h-3.5 text-[#007acc]" />
+                <span className="hidden sm:inline text-[11px] uppercase tracking-wider text-gray-300">
+                  File
+                </span>
+              </div>
+              <span className="cursor-pointer hover:bg-[#474749] px-1.5 py-0.5 rounded transition">
+                Edit
+              </span>
+              <span className="hidden md:inline cursor-pointer hover:bg-[#474749] px-1.5 py-0.5 rounded transition">
+                Selection
+              </span>
+              <span className="cursor-pointer hover:bg-[#474749] px-1.5 py-0.5 rounded transition">
+                View
+              </span>
+              <span className="hidden md:inline cursor-pointer hover:bg-[#474749] px-1.5 py-0.5 rounded transition">
+                Go
+              </span>
+              <span className="cursor-pointer hover:bg-[#474749] px-1.5 py-0.5 rounded transition">
+                Run
+              </span>
+              <span className="hidden sm:inline cursor-pointer hover:bg-[#474749] px-1.5 py-0.5 rounded transition">
+                Terminal
+              </span>
+              <span className="cursor-pointer hover:bg-[#474749] px-1.5 py-0.5 rounded transition">
+                Help
+              </span>
+            </div>
 
-{/* <NativeBanner /> */}
-      {/* 2. Primary Workspace Body */}
-      <div className="flex-1 flex min-h-0">
-        {/* VS Code utility Activity Rail (Vertical Sidebar icons) */}
-        <Sidebar activeTab={sidebarTab} onSelectTab={setSidebarTab} />
+            {/* Workspace App Title */}
+            <div className="flex-1 text-center text-[11px] text-[#858585] truncate font-mono px-4">
+              {files.find((f) => f.id === activeFileId)?.name || "index.js"} —
+              CodeRunner Workspace (Vite + NodeVM)
+            </div>
 
-        {/* Sliding Collapsible Drawer Panel (Explorer viewport) */}
-        {sidebarTab && (
-          <div className="w-80 border-r border-[#1e1e1e] shrink-0 h-full bg-[#252526]">
-            {sidebarTab === "explorer" ? (
-              <FileTree
-                files={files}
-                activeFileId={activeFileId}
-                onSelectFile={handleSelectFile}
-                onCreateFile={handleCreateFile}
-                onRenameFile={handleRenameFile}
-                onDeleteFile={handleDeleteFile}
+            {/* Window controls mimicking desktop app */}
+            <div className="flex items-center gap-1.5">
+              <div
+                className="w-2.5 h-2.5 bg-[#4f4f4f] hover:bg-[#ff5f56] rounded-full transition cursor-pointer"
+                title="Close"
               />
-            ) : sidebarTab === "git" ? (
-              <GitPanel
-                files={files}
-                setFiles={setFiles}
-                activeFileId={activeFileId}
-                setActiveFileId={handleSelectFile}
-                setOpenTabs={setOpenTabs}
+              <div
+                className="w-2.5 h-2.5 bg-[#4f4f4f] hover:bg-[#ffbd2e] rounded-full transition cursor-pointer"
+                title="Minimize"
               />
-            ) : null}
-          </div>
-        )}
+              <div
+                className="w-2.5 h-2.5 bg-[#4f4f4f] hover:bg-[#27c93f] rounded-full transition cursor-pointer"
+                title="Maximize"
+              />
+            </div>
+          </header>
 
-        {/* Code Editor and Terminal split screen space */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#1e1e1e]">
-          {/* Main Monaco code editor */}
-          <div className="flex-1 min-h-0">
-            <EditorArea
-              files={files}
-              activeFileId={activeFileId}
-              onSelectFile={handleSelectFile}
-              onUpdateFileContent={handleUpdateFileContent}
-              onCloseFile={handleCloseTab}
-              openTabs={openTabs}
-              settings={settings}
-              onUpdateSettings={(newSettings) =>
-                setSettings((prev) => ({ ...prev, ...newSettings }))
-              }
-              onRunCode={handleRunCode}
-              isRunning={isRunning}
-              isTerminalVisible={isTerminalVisible}
-              onToggleTerminal={() => setIsTerminalVisible((prev) => !prev)}
-            />
+          {/* <NativeBanner /> */}
+          {/* 2. Primary Workspace Body */}
+          <div className="flex-1 flex min-h-0">
+            {/* VS Code utility Activity Rail (Vertical Sidebar icons) */}
+            <Sidebar activeTab={sidebarTab} onSelectTab={setSidebarTab} />
+
+            {/* Sliding Collapsible Drawer Panel (Explorer viewport) */}
+            {sidebarTab && (
+              <div className="w-80 border-r border-[#1e1e1e] shrink-0 h-full bg-[#252526]">
+                {sidebarTab === "explorer" ? (
+                  <FileTree
+                    files={files}
+                    activeFileId={activeFileId}
+                    onSelectFile={handleSelectFile}
+                    onCreateFile={handleCreateFile}
+                    onRenameFile={handleRenameFile}
+                    onDeleteFile={handleDeleteFile}
+                  />
+                ) : sidebarTab === "git" ? (
+                  <GitPanel
+                    files={files}
+                    setFiles={setFiles}
+                    activeFileId={activeFileId}
+                    setActiveFileId={handleSelectFile}
+                    setOpenTabs={setOpenTabs}
+                  />
+                ) : null}
+              </div>
+            )}
+
+            {/* Code Editor and Terminal split screen space */}
+            <div className="flex-1 flex flex-col min-w-0 bg-[#1e1e1e]">
+              {/* Main Monaco code editor */}
+              <div className="flex-1 min-h-0">
+                <EditorArea
+                  files={files}
+                  activeFileId={activeFileId}
+                  onSelectFile={handleSelectFile}
+                  onUpdateFileContent={handleUpdateFileContent}
+                  onCloseFile={handleCloseTab}
+                  openTabs={openTabs}
+                  settings={settings}
+                  onUpdateSettings={(newSettings) =>
+                    setSettings((prev) => ({ ...prev, ...newSettings }))
+                  }
+                  onRunCode={handleRunCode}
+                  isRunning={isRunning}
+                  isTerminalVisible={isTerminalVisible}
+                  onToggleTerminal={() => setIsTerminalVisible((prev) => !prev)}
+                />
+              </div>
+
+              {/* Console standard log outputs terminal */}
+              {isTerminalVisible && (
+                <TerminalArea
+                  terminalLogs={terminalLogs}
+                  onClearLogs={handleClearLogs}
+                  stdin={stdin}
+                  onUpdateStdin={setStdin}
+                  runResult={runResult}
+                  isRunning={isRunning}
+                  activeHtmlCode={activeHtmlCode}
+                  isWebPreviewOpen={isWebPreviewOpen}
+                  onToggleWebPreview={setIsWebPreviewOpen}
+                  onCloseTerminal={() => setIsTerminalVisible(false)}
+                />
+              )}
+            </div>
           </div>
 
-          {/* Console standard log outputs terminal */}
-          {isTerminalVisible && (
-            <TerminalArea
-              terminalLogs={terminalLogs}
-              onClearLogs={handleClearLogs}
-              stdin={stdin}
-              onUpdateStdin={setStdin}
-              runResult={runResult}
-              isRunning={isRunning}
-              activeHtmlCode={activeHtmlCode}
-              isWebPreviewOpen={isWebPreviewOpen}
-              onToggleWebPreview={setIsWebPreviewOpen}
-              onCloseTerminal={() => setIsTerminalVisible(false)}
-            />
-          )}
+          {/* <div className="fixed bottom-10 right-4 z-50 bg-[#1e1e1e] border border-[#333333] shadow-lg rounded p-1 hidden lg:block">
+          <Banner300x250 />
+        </div> */}
+
+          {/* 3. Sophisticated Dark: Visual Studio Code Blue Status Bar */}
+          <footer className="h-6 bg-[#007acc] text-white flex items-center justify-between px-3 text-[11px] shrink-0 select-none">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1 cursor-pointer hover:bg-[#0062a3] px-1.5 py-0.5 rounded">
+                <span className="font-semibold">main*</span>
+              </div>
+              <div className="flex items-center gap-1.5 cursor-pointer hover:bg-[#0062a3] px-1.5 py-0.5 rounded">
+                <span>⟳</span>
+                <span>0 ↓ 0 ↑</span>
+              </div>
+              {/* Toggle Terminal Button in Status Bar */}
+              <button
+                id="btn-status-toggle-terminal"
+                onClick={() => setIsTerminalVisible((prev) => !prev)}
+                className="flex items-center gap-1 bg-[#005a96] hover:bg-[#0062a3] active:bg-[#004e82] px-2 py-0.5 rounded cursor-pointer font-semibold transition"
+                title="Toggle Console/Terminal (Ctrl+`)"
+              >
+                <span>Terminal: {isTerminalVisible ? "Visible" : "Hidden"}</span>
+              </button>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-0.5">
+                  <span className="text-white">⊗</span> 0
+                </span>
+                <span className="flex items-center gap-0.5">
+                  <span className="text-white">⚠</span>{" "}
+                  {runResult?.compileError ? "1" : "0"}
+                </span>
+              </div>
+            </div>
+
+
+
+            <div className="flex items-center gap-4">
+              <span className="hidden sm:inline hover:bg-[#0062a3] px-1.5 py-0.5 rounded cursor-pointer">
+                Tab Size: {settings.tabSize}
+              </span>
+              <span className="hidden sm:inline hover:bg-[#0062a3] px-1.5 py-0.5 rounded cursor-pointer">
+                UTF-8
+              </span>
+              <span className="hover:bg-[#0062a3] px-1.5 py-0.5 rounded cursor-pointer uppercase font-mono">
+                {files.find((f) => f.id === activeFileId)?.language || "plain text"}
+              </span>
+              <span className="hidden md:inline hover:bg-[#0062a3] px-1.5 py-0.5 rounded cursor-pointer">
+                ✓ Prettier
+              </span>
+              <button
+                onClick={() => navigateTo("/privacy")}
+                className="hover:bg-[#0062a3] px-1.5 py-0.5 rounded cursor-pointer transition font-semibold"
+                title="View Privacy Policy"
+              >
+                Privacy Policy
+              </button>
+            </div>
+          </footer>
         </div>
-      </div>
-
-      {/* <div className="fixed bottom-10 right-4 z-50 bg-[#1e1e1e] border border-[#333333] shadow-lg rounded p-1 hidden lg:block">
-        <Banner300x250 />
-      </div> */}
-
-      {/* 3. Sophisticated Dark: Visual Studio Code Blue Status Bar */}
-      <footer className="h-6 bg-[#007acc] text-white flex items-center justify-between px-3 text-[11px] shrink-0 select-none">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1 cursor-pointer hover:bg-[#0062a3] px-1.5 py-0.5 rounded">
-            <span className="font-semibold">main*</span>
-          </div>
-          <div className="flex items-center gap-1.5 cursor-pointer hover:bg-[#0062a3] px-1.5 py-0.5 rounded">
-            <span>⟳</span>
-            <span>0 ↓ 0 ↑</span>
-          </div>
-          {/* Toggle Terminal Button in Status Bar */}
-          <button
-            id="btn-status-toggle-terminal"
-            onClick={() => setIsTerminalVisible((prev) => !prev)}
-            className="flex items-center gap-1 bg-[#005a96] hover:bg-[#0062a3] active:bg-[#004e82] px-2 py-0.5 rounded cursor-pointer font-semibold transition"
-            title="Toggle Console/Terminal (Ctrl+`)"
-          >
-            <span>Terminal: {isTerminalVisible ? "Visible" : "Hidden"}</span>
-          </button>
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-0.5">
-              <span className="text-white">⊗</span> 0
-            </span>
-            <span className="flex items-center gap-0.5">
-              <span className="text-white">⚠</span>{" "}
-              {runResult?.compileError ? "1" : "0"}
-            </span>
-          </div>
-        </div>
-
-    
-
-        <div className="flex items-center gap-4">
-          <span className="hidden sm:inline hover:bg-[#0062a3] px-1.5 py-0.5 rounded cursor-pointer">
-            Tab Size: {settings.tabSize}
-          </span>
-          <span className="hidden sm:inline hover:bg-[#0062a3] px-1.5 py-0.5 rounded cursor-pointer">
-            UTF-8
-          </span>
-          <span className="hover:bg-[#0062a3] px-1.5 py-0.5 rounded cursor-pointer uppercase font-mono">
-            {files.find((f) => f.id === activeFileId)?.language || "plain text"}
-          </span>
-          <span className="hidden md:inline hover:bg-[#0062a3] px-1.5 py-0.5 rounded cursor-pointer">
-            ✓ Prettier
-          </span>
-          <button
-            onClick={() => navigateTo("/privacy")}
-            className="hover:bg-[#0062a3] px-1.5 py-0.5 rounded cursor-pointer transition font-semibold"
-            title="View Privacy Policy"
-          >
-            Privacy Policy
-          </button>
-        </div>
-      </footer>
-    </div>
+      </ConsentProvider>
+    </>
   );
 }
