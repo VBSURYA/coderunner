@@ -31,7 +31,7 @@ import Banner300x250 from "./components/ads/Banner300x250";
 import NativeBanner from "./components/ads/NativeBanner";
 import Popunder from "./components/ads/Popunder";
 import PrivacyPolicy from "./components/PrivacyPolicy";
-// import AnalyticsPanel from './components/AnalyticsPanel';
+import Seo from "./components/Seo";
 
 const LOCAL_STORAGE_FILES_KEY = "coderunner_workspace_files";
 const LOCAL_STORAGE_SETTINGS_KEY = "coderunner_workspace_settings";
@@ -515,6 +515,12 @@ export default function App() {
       id="workspace-layout-root"
       className="flex flex-col h-screen w-screen bg-[#1e1e1e] text-[#cccccc] overflow-hidden font-sans antialiased"
     >
+      <Seo
+        title="Zero Config IDE - CodeRunner Online Compiler"
+        description="Zero-config online IDE & compiler. Write, run, and share code instantly in your browser. Supports multiple languages."
+        keywords="code runner, online code runner, web ide, zero config ide, online compiler, run code online, multi-language compiler, browser ide, compile code online, javascript compiler, python compiler"
+        canonical="https://zeroconfigide.netlify.app/"
+      />
       {/* <Popunder /> */}
       {/* 1. Sophisticated Dark: Visual Studio Code Header Bar */}
       <header className="flex items-center justify-between px-4 h-9 bg-[#323233] border-b border-[#1e1e1e] shrink-0 select-none text-[#cccccc]">
