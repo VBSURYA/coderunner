@@ -4,9 +4,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Favicon & Icons -->
   <link rel="icon" type="image/x-icon" href="/coderunner_logo.png" />
-  <link rel="shortcut icon" href="/coderunner_logo.png" />
-  <link rel="apple-touch-icon" href="/coderunner_logo.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/coderunner_logo.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/coderunner_logo.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/coderunner_logo.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#007acc" />
   <meta name="google-adsense-account" content="ca-pub-5673387170560268">
   <meta name="google-site-verification" content="B2a0jThIF5ahHIbLZh1q4hanvta1u0yhw3XvLpU-dG8" />
   <meta name="msvalidate.01" content="E4FF18B9DA78B0ADE4D2A41ADDAFBC8D" />
@@ -39,6 +43,40 @@
   <meta property="twitter:image" content="https://zeroconfigide.netlify.app/og-image.png" />
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5673387170560268"
     crossorigin="anonymous"></script>
+    
+  <!-- JSON-LD Structured Data: WebSite + Organization (for Google logo) -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://zeroconfigide.netlify.app/",
+          "url": "https://zeroconfigide.netlify.app/",
+          "name": "CodeRunner - Zero Config IDE",
+          "description": "Zero-config online IDE & compiler. Write, run, and share code instantly in your browser. Supports multiple languages.",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://zeroconfigide.netlify.app/?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://zeroconfigide.netlify.app",
+          "name": "CodeRunner",
+          "url": "https://zeroconfigide.netlify.app/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://zeroconfigide.netlify.app/coderunner_logo.png",
+            "width": 512,
+            "height": 512
+          },
+          "sameAs": []
+        }
+      ]
+    }
+  </script>
   <script>
     // Safeguard against third-party scripts/extensions crashing on read-only window.fetch
     (function () {
@@ -62,27 +100,9 @@
   <!-- <script src="https://pl30188523.effectivecpmnetwork.com/89/f0/4e/89f04e17e02b62bcfd505df818f4df76.js"></script> -->
   <!-- <script src="https://chalkedwhiningromance.com/db/e7/bd/dbe7bdf663c76816965f8eac3253dfab.js"></script> -->
   <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FSRC0QYPZ8"></script>
-  <!-- Ahref tag-->
-  <script src="https://analytics.ahrefs.com/analytics.js" data-key="d8Po74rUYNcrHGAvFgv3sQ" async></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
+  <!-- Google Analytics & GTM are loaded after consent via ConsentBanner -->
 
-    gtag('config', 'G-FSRC0QYPZ8');
-  </script>
-
-  <!-- Google Tag Manager -->
-  <script>(function (w, d, s, l, i) {
-      w[l] = w[l] || []; w[l].push({
-        'gtm.start':
-          new Date().getTime(), event: 'gtm.js'
-      }); var f = d.getElementsByTagName(s)[0],
-        j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
-          'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
-    })(window, document, 'script', 'dataLayer', 'GTM-5TK8K27H');</script>
-  <!-- End Google Tag Manager -->
+  <!-- GTM loaded after consent -->
 </head>
 
 <body>
