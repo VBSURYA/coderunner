@@ -57,7 +57,18 @@ export default async function handler(req: any, res: any) {
     return res.status(405).json({ error: 'Method not allowed. Use POST.' });
   }
 
-  const { language, code, stdin } = req.body;
+  let body = req.body;
+  if (typeof body === 'string') {
+    try {
+      body = JSON.parse(body);
+    } catch (e) {
+      body = {};
+    }
+  } else if (!body) {
+    body = {};
+  }
+
+  const { language, code, stdin } = body;
 
   if (!code) {
     return res.status(400).json({ error: 'Code content is required' });
