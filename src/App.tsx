@@ -470,7 +470,7 @@ export default function App() {
       });
 
       if (!response.ok) {
-        throw new Error("Run API failed with status " + response.status);
+        throw new Error("Run API failed with status " + response.status + " " + await response.text());
       }
 
       const result: RunResult = await response.json();
