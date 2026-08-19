@@ -50,16 +50,15 @@ export default async function handler(req: any, res: any) {
   // Helper response wrapper to support both Vercel & Netlify
   const sendResponse = (statusCode: number, payload: any) => {
     if (isNetlify) {
-      return {
-        statusCode,
+     return new Response(JSON.stringify(payload), {
+        status: statusCode,
         headers: {
+          'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Headers': 'Content-Type',
           'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
-      };
+      });
     } else {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
@@ -70,7 +69,7 @@ export default async function handler(req: any, res: any) {
   const httpMethod = isNetlify ? req.httpMethod : req.method;
   if (httpMethod === 'OPTIONS') {
     return isNetlify
-      ? { statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*' }, body: '' }
+      ? new Response(null,{ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }})
       : res.status(200).end();
   }
 
