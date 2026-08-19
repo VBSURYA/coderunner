@@ -66,7 +66,7 @@ export default async function handler(req: any, res: any) {
       return res.status(statusCode).json(payload);
     }
   };
-  const httpMethod = isNetlify ? req.httpMethod : req.method;
+  const httpMethod = (req.method || req.httpMethod || '').toUpperCase();
   console.log(httpMethod);
   console.log(req.body);  
   if (httpMethod === 'OPTIONS') {
