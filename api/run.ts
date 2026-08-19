@@ -67,6 +67,8 @@ export default async function handler(req: any, res: any) {
     }
   };
   const httpMethod = isNetlify ? req.httpMethod : req.method;
+  console.log(httpMethod);
+  console.log(req.body);  
   if (httpMethod === 'OPTIONS') {
     return isNetlify
       ? new Response(null,{ status: 200, headers: { 'Access-Control-Allow-Origin': '*' }})
