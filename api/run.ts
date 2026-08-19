@@ -44,6 +44,41 @@ function getFileExtension(lang: string): string {
 }
 
 export default async function handler(req: any, res: any) {
+
+  const isNetlify = !res || typeof res.status !== 'function';
+
+  // Helper response wrapper to support both Vercel & Netlify
+  const sendResponse = (statusCode: number, payload: any) => {
+    if (isNetlify) {
+      return {
+        statusCode,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      };
+    } else {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      return res.status(statusCode).json(payload);
+    }
+  };
+  const httpMethod = isNetlify ? req.httpMethod : req.method;
+  if (httpMethod === 'OPTIONS') {
+    return isNetlify
+      ? { statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*' }, body: '' }
+      : res.status(200).end();
+  }
+
+  if (httpMethod !== 'POST') {
+    return sendResponse(405, { error: 'Method not allowed. Use POST.' });
+  }
+
+  
   // Setup CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
@@ -71,7 +106,7 @@ export default async function handler(req: any, res: any) {
   const { language, code, stdin } = body;
 
   if (!code) {
-    return res.status(400).json({ error: 'Code content is required' });
+    return sendResponse(400, { error: 'Code content is required' });
   }
 
   const normalizedLang = (language || '').toLowerCase();
@@ -112,7 +147,7 @@ export default async function handler(req: any, res: any) {
           stderr = result.compile.stderr + '\n' + stderr;
         }
         const exitCode = result.run?.code !== undefined ? result.run.code : (result.compile?.code || 0);
-        return res.status(200).json({
+        return sendResponse(200, {
           stdout,
           stderr,
           exitCode,
@@ -188,7 +223,7 @@ export default async function handler(req: any, res: any) {
     }
   }
 
-  return res.status(400).json({
+  return sendResponse(400, {
     stdout: '',
     stderr: `Language "${language}" is not supported. Please select one of the supported languages: javascript, typescript, python, c++, go, ruby, java.`,
     exitCode: 1,
